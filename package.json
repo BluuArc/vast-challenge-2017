@@ -1,0 +1,18 @@
+{
+  "name": "vast-challenge-2017",
+  "version": "1.0.0",
+  "description": "Submission for VAST Challenge 2017",
+  "main": "web_deployment.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "vast"
+  ],
+  "author": "Joshua Castor",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "express": "^4.15.3",
+    "yargs": "^8.0.1"
+  }
+}
