@@ -39,6 +39,10 @@ p{
     fill: green;
 }
 
+.point {
+    fill: blue;
+}
+
 .axis path,
 .axis line {
     fill: none;
