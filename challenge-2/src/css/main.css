@@ -1,0 +1,53 @@
+body { 
+    /*margin: 0; */
+    /*background-color: black;*/
+}
+
+#scene { width: 90%; height: 80%}
+
+/* SVG styling */
+svg {
+    font-family: helvetica, sans-serif;
+}
+
+path, line {
+    stroke: #777;
+}
+
+.container-fluid{
+    display: flex;
+    padding-left: auto;
+    padding-right: auto;
+}
+
+.row {
+    margin-left: 0px;
+    margin-right: 0px;
+    border: 1px solid gray
+}
+
+p{
+    /*text-align: center;
+    color: white;*/
+}
+
+.sensor{
+    fill: red;
+}
+
+.factory{
+    fill: green;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    /*stroke: white;*/
+    shape-rendering: crispEdges;
+}
+
+.axis text, .axis-label {
+    font-family: sans-serif;
+    font-size: 11px;
+    /*fill: white;*/
+}
