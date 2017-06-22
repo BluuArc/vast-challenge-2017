@@ -2,11 +2,13 @@
 
 let Graph = function(){
     let self = this;
-    let min = d3.min([window.innerWidth, window.innerHeight]);
+    let min = d3.min([d3.select('#graph').node().offsetWidth, d3.select('#graph').node().offsetHeight]);
+    // let min = 300;
     let w = min, h = min;
     let kiviatSize = 20;
     let padding = 30;
-    let svg = d3.select('#graph').append('svg').attr('width',w).attr('height',h);
+    let svg = d3.select('#graph').append('svg')//.attr('width',w).attr('height',h)
+        .attr('viewBox',`0 0 ${min} ${min}`)//.attr('preserveAspectRatio', `xMinYMin meet`);
     let scales = {}, axes = {};
     let sensorGraphs  = [];
     let sensorLocations = [
@@ -163,17 +165,22 @@ let Graph = function(){
             }
             fulfill(); //done
         });
-    }
-}
+    };
+};
 
 let Kiviat = function (parent, position,sensorNumber,scales){
     let self = this;
     //kiviat dimensions
+    //pass in size via parameter, based on pixel distance in image (not svg)?
     let w = 50, h = 50;
     let center = {
         x: w/2,
         y: h/2
     };
+    //used to draw the lines on the graph
+    let lineFunction = d3.line()
+        .x(function (d) { return d.x; })
+        .y(function (d) { return d.y; });
 
     //create group on parent
     parent.append('g').classed('kiviat', true).attr('id',`sensor-${sensorNumber}`)
@@ -181,7 +188,7 @@ let Kiviat = function (parent, position,sensorNumber,scales){
     self.graph = d3.select(`#sensor-${sensorNumber}`);
 
     scales = scales || {}, axes = {};
-    //point position along each respective axis
+    //default point position along each respective axis 
     let pointPositions = {
         'Appluimonia': h/2, //h/2 to 0
         'Chlorodinine': w/2, //w/2 to w
@@ -195,11 +202,30 @@ let Kiviat = function (parent, position,sensorNumber,scales){
     self.graph.append('circle').classed('sensor', true).attr('r', 5).attr('cx', w).attr('cy', h);
     self.graph.append('circle').classed('sensor', true).attr('r', 5).attr('cx', 0).attr('cy', h);
 
+    function drawAxes(){
+        let lineData = {
+            'Appluimonia': [{x:w/2,y:h/2}, {x:w/2, y:0}], //h/2 to 0
+            'Chlorodinine': [{x:w/2,y:h/2}, {x:w, y:h/2}], //w/2 to w
+            'Methylosmolene': [{x:w/2,y:h/2}, {x:w/2, y:h}], //h/2 to h
+            'AGOC-3A': [{x:w/2,y:h/2}, {x:0, y:h/2}] //w/2 to 0
+        };
+
+        for(let chemical in lineData){
+            // console.log(chemical,lineData[chemical]);
+            axes[chemical] = self.graph.append('path')
+                .data([lineData[chemical]])
+                .attr('class','axis')
+                .attr('d',lineFunction)
+                .attr('id', `${chemical}-${sensorNumber}-axis`);
+        }
+        
+    }
+
     self.init = function(){
         //general axis scale for visible axis
-        scales.axes = d3.scaleLinear()
-            .domain([-1,1])
-            .range([0,w]);
+        // scales.axes = d3.scaleLinear()
+        //     .domain([-1,1])
+        //     .range([0,w]);
         
         //all dimensions are relative to top left corner of group (0,0)
         scales.Appluimonia = (scales.Appluimonia || d3.scaleLinear().domain([0, 2])).range([h/2,0]); //top axis;
@@ -211,28 +237,25 @@ let Kiviat = function (parent, position,sensorNumber,scales){
         scales['AGOC-3A'] = (scales['AGOC-3A'] || d3.scaleLinear().domain([0,2])).range([w/2,0]); //left axis
 
         //draw axes
-        axes.x = d3.axisBottom(scales.axes).ticks(4);
-        let axisElements = self.graph.append('g')
-            .attr('class', 'axis')
-            .attr('transform', `translate(0,${h/2})`)
-            .call(axes.x);
-        axisElements.selectAll('text').remove(); //remove axes labels, based on https://stackoverflow.com/questions/19787925/create-a-d3-axis-without-tick-labels 
-
-        axes.y = d3.axisLeft(scales.axes).ticks(4);
-        axisElements = self.graph.append('g')
-            .attr('class', 'axis')
-            .attr('transform', `translate(${w/2},0)`)
-            .call(axes.y);
-        axisElements.selectAll('text').remove(); //remove axes labels, based on https://stackoverflow.com/questions/19787925/create-a-d3-axis-without-tick-labels 
+        drawAxes();
 
         //draw initial point positions
+        let points = [];
         for (let c in pointPositions) {
+            // points.push(get_translation(c, pointPositions[c]));
             let translation = get_translation(c, pointPositions[c]);
-            self.graph.append('circle').classed('point', true)
-                    .attr('id', `${c}-${sensorNumber}`)
-                    .attr('r', 5)
-                    .attr('cx', translation[0]).attr('cy', translation[1]);
+            points.push(translation);
+            // self.graph.append('circle').classed('point', true)
+            //         .attr('id', `${c}-${sensorNumber}`)
+            //         .attr('r', 5)
+            //         .attr('cx', translation.x).attr('cy', translation.y);
         }
+
+        points.push(points[0]);
+        self.graph.append('path').data([points])
+            .attr('d', lineFunction)
+            .classed('current', true)
+            .attr('id',`data.${sensorNumber}`);
 
     };
 
@@ -265,22 +288,33 @@ let Kiviat = function (parent, position,sensorNumber,scales){
     function get_translation(name, value) {
         switch (name) {
             case 'Appluimonia':
-            case `Methylosmolene`: return [w / 2, value];
+            case `Methylosmolene`: return {x:w/2, y:value}; //x stays constant, as we're moving along y axis
 
             case 'Chlorodinine':
-            case 'AGOC-3A': return [value, h / 2];
+            case 'AGOC-3A': return {x:value, y:h/2}; //y stays constant, as we're moving along x axis
 
-            default: return [0, 0];
+            default: return {x:0, y:0};
         }
     }
 
     function draw(){   
+        let points = [];
         for(let c in pointPositions){
+            // points.push(get_translation(c, pointPositions[c]));
             let translation = get_translation(c,pointPositions[c]);
+            points.push(translation);
+            // let point = self.graph.selectAll(`#${c}-${sensorNumber}`);
+            
 
-            let point = self.graph.selectAll(`#${c}-${sensorNumber}`);
-
-            point.attr('cx', translation[0]).attr('cy', translation[1]);
+            // point.attr('cx', translation.x).attr('cy', translation.y);
         }
+
+        points.push(points[0]);
+        self.graph.select(`.current`).data([points])
+            .attr('d', lineFunction)
+            .classed('current', true)
+
+        // selt.graph.selectAll('path').attr('d',lineFunction(points));
+
     }
 }
