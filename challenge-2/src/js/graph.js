@@ -1,14 +1,18 @@
 `use strict`;
 
-let Graph = function(){
+var tooltip = tooltip || new Tooltip();
+
+let Graph = function(size){
     let self = this;
     let min = d3.min([d3.select('#graph').node().offsetWidth, d3.select('#graph').node().offsetHeight]);
-    // let min = 300;
-    let w = min, h = min;
-    let kiviatSize = 20;
-    let padding = 30;
+    size = size || min;
+    let w = size || min, h = size || min;
+    let kiviatSize = 50;
+    let kiviatScale = 1;
+    let padding = 50;
     let svg = d3.select('#graph').append('svg')//.attr('width',w).attr('height',h)
-        .attr('viewBox',`0 0 ${min} ${min}`)//.attr('preserveAspectRatio', `xMinYMin meet`);
+        .attr('viewBox',`0 0 ${size} ${size}`)//.attr('preserveAspectRatio', `xMinYMin meet`);
+        .attr('style', `max-height:100%`);
     let scales = {}, axes = {};
     let sensorGraphs  = [];
     let sensorLocations = [
@@ -36,17 +40,19 @@ let Graph = function(){
 
         let xScale = d3.scaleLinear().domain([scales.miles(50), scales.miles(125)])
             .range([padding, w - padding * 2]);//add padding to not go outside bounds
-        scales.x = (function(value){
+        scales.x = (function(value){ //auto convert original pixel to scaled pixel
             return xScale(scales.miles(value));
         }); 
 
         let yScale = d3.scaleLinear().domain([scales.miles(0), scales.miles(50)])
             .range([h - padding, padding]); //[h,0] makes it so that smaller numbers are lower; add padding to not go outside bounds
-        scales.y = (function(value){
+        scales.y = (function (value) { //auto convert original pixel to scaled pixel
             return yScale(scales.miles(value));
-        })
-        
-        
+        });
+
+        // scales.kiviatSize = {}
+        kiviatSize = d3.min([scales.x(50+20), scales.y(20)])/2;
+        console.log(kiviatSize);
         axes.x = d3.axisBottom(xScale);
         svg.append('g')
             .attr('class', 'axis')
@@ -60,19 +66,26 @@ let Graph = function(){
             .call(axes.y);
     };
 
+    //should only be called once
     self.drawFactories = function(){
         let factories = svg.selectAll('.factory').data(factoryLocations);
+        let offset = kiviatSize * 0.25 * kiviatScale;
         factories.exit().remove(); //remove excess
 
         //update current
-        factories.attr('x', function (d) { return scales.x(d.location[0]); })
-            .attr('y', function (d) { return scales.y(d.location[1]); });
+        // factories.attr('x', function (d) { return scales.x(d.location[0]) - offset/2; })
+        //     .attr('y', function (d) { return scales.y(d.location[1]) - offset/2; });
 
         //create new as necessary
-        factories.enter().append('rect').classed('factory', true)
-            .attr('width', 10).attr('height', 10)
-            .attr('x', function (d) { return scales.x(d.location[0]); })
-            .attr('y', function (d) { return scales.y(d.location[1]); });
+        let newFactories = factories.enter();
+        newFactories.append('rect').classed('factory', true)
+            .attr('width', offset).attr('height', offset)
+            .attr('x', function (d) { return scales.x(d.location[0]) - offset/2; })
+            .attr('y', function (d) { return scales.y(d.location[1]) - offset/2; })
+        newFactories.append('text').classed('factory-label',true)
+            .attr('x', function (d) { return scales.x(d.location[0]) - offset/2; })
+            .attr('y', function (d) { return scales.y(d.location[1]) - offset/2; })
+            .text(function(d) { return d.name.split(" ").map(function(n) { return n[0]}).join('');})
     };
 
     self.drawSensors = function(){
@@ -87,9 +100,13 @@ let Graph = function(){
         
         sensors.enter().each(function(d,i){
             let curGraph = new Kiviat(svg,{
-                x: scales.x(d.location[0]) - kiviatSize/2,
-                y: scales.y(d.location[1]) - kiviatSize/2
-            },d.name);
+                x: scales.x(d.location[0]) - (kiviatSize/2) * kiviatScale,
+                y: scales.y(d.location[1]) - (kiviatSize/2) * kiviatScale
+            },d.name, scales,{
+                scale: kiviatScale,
+                w: kiviatSize,
+                h: kiviatSize
+            });
             curGraph.init();
             curGraph.update();
             sensorGraphs.push(curGraph);
@@ -168,11 +185,12 @@ let Graph = function(){
     };
 };
 
-let Kiviat = function (parent, position,sensorNumber,scales){
+let Kiviat = function (parent, position,sensorNumber,scales, options){
     let self = this;
+    options = options || {};
     //kiviat dimensions
     //pass in size via parameter, based on pixel distance in image (not svg)?
-    let w = 50, h = 50;
+    let w = options.w || 50, h = options.h || 50;
     let center = {
         x: w/2,
         y: h/2
@@ -184,23 +202,17 @@ let Kiviat = function (parent, position,sensorNumber,scales){
 
     //create group on parent
     parent.append('g').classed('kiviat', true).attr('id',`sensor-${sensorNumber}`)
-        .attr("transform", `translate(${position.x},${position.y})`);
+        .attr("transform", `translate(${position.x},${position.y}) scale(${options.scale || 1})`);
     self.graph = d3.select(`#sensor-${sensorNumber}`);
 
     scales = scales || {}, axes = {};
     //default point position along each respective axis 
     let pointPositions = {
-        'Appluimonia': h/2, //h/2 to 0
-        'Chlorodinine': w/2, //w/2 to w
-        'Methylosmolene': h/2, //h/2 to h
-        'AGOC-3A': w/2 //w/2 to 0
+        'Appluimonia': {position: h/2, value: 0}, //h/2 to 0
+        'Chlorodinine': {position: w/2, value: 0}, //w/2 to w
+        'Methylosmolene': {position: h/2, value: 0}, //h/2 to h
+        'AGOC-3A': {position: w/2, value: 0} //w/2 to 0
     };
-
-    //test code to show boundaries
-    self.graph.append('circle').classed('sensor', true).attr('r', 5).attr('cx', 0).attr('cy', 0);
-    self.graph.append('circle').classed('sensor', true).attr('r', 5).attr('cx', w).attr('cy', 0);
-    self.graph.append('circle').classed('sensor', true).attr('r', 5).attr('cx', w).attr('cy', h);
-    self.graph.append('circle').classed('sensor', true).attr('r', 5).attr('cx', 0).attr('cy', h);
 
     function drawAxes(){
         let lineData = {
@@ -212,21 +224,33 @@ let Kiviat = function (parent, position,sensorNumber,scales){
 
         for(let chemical in lineData){
             // console.log(chemical,lineData[chemical]);
-            axes[chemical] = self.graph.append('path')
-                .data([lineData[chemical]])
-                .attr('class','axis')
-                .attr('d',lineFunction)
-                .attr('id', `${chemical}-${sensorNumber}-axis`);
+            axes[chemical] = {
+                regular: self.graph.append('path')
+                    .data([lineData[chemical]])
+                    .attr('class', 'axis')
+                    .attr('d', lineFunction)
+                    .attr('id', `${chemical}-axis`),
+                helper: self.graph.append('path')
+                    .data([lineData[chemical]])
+                    .attr('class', 'axis-mouseover')
+                    .attr('d', lineFunction)
+                    .attr('id', `${chemical}-${sensorNumber}-axis-helper`)
+                    .attr('value', 0)
+                    .on('mouseenter',function(d,i){
+                        // console.log("entered");
+                        let value = d3.select(this).attr('value');
+                        tooltip.setContent(`${chemical}<br>${value} ppm`);
+                        tooltip.showAt(d3.event.pageX, d3.event.pageY);
+                    }).on('mouseleave',function(){
+                        tooltip.hide();
+                        // console.log('left');
+                    })
+            }
         }
         
     }
 
-    self.init = function(){
-        //general axis scale for visible axis
-        // scales.axes = d3.scaleLinear()
-        //     .domain([-1,1])
-        //     .range([0,w]);
-        
+    self.init = function(){        
         //all dimensions are relative to top left corner of group (0,0)
         scales.Appluimonia = (scales.Appluimonia || d3.scaleLinear().domain([0, 2])).range([h/2,0]); //top axis;
 
@@ -239,16 +263,14 @@ let Kiviat = function (parent, position,sensorNumber,scales){
         //draw axes
         drawAxes();
 
+        //put sensor number
+        self.graph.append('text').classed('sensor-label',true).attr('x',w*0.1).attr('y',h*0.1).text(sensorNumber);
+
         //draw initial point positions
         let points = [];
         for (let c in pointPositions) {
-            // points.push(get_translation(c, pointPositions[c]));
-            let translation = get_translation(c, pointPositions[c]);
+            let translation = get_translation(c, pointPositions[c].position);
             points.push(translation);
-            // self.graph.append('circle').classed('point', true)
-            //         .attr('id', `${c}-${sensorNumber}`)
-            //         .attr('r', 5)
-            //         .attr('cx', translation.x).attr('cy', translation.y);
         }
 
         points.push(points[0]);
@@ -262,8 +284,8 @@ let Kiviat = function (parent, position,sensorNumber,scales){
     self.update = function(data){
         //sample data set
         data = data || [
-            { Chemical: 'Appluimonia', Reading: 0.25 },
-            { Chemical: 'Chlorodinine', Reading: 0.5 },
+            { Chemical: 'Appluimonia', Reading: 1.25 },
+            { Chemical: 'Chlorodinine', Reading: 1.8 },
             { Chemical: 'Methylosmolene', Reading: 0.75 },
             { Chemical: 'AGOC-3A', Reading: 1 },
         ];
@@ -272,13 +294,21 @@ let Kiviat = function (parent, position,sensorNumber,scales){
         let convertedData = {};
         for(let d of data){
             convertedData[d.Chemical] = d.Reading;
+            d3.select(`#${d.Chemical}-${sensorNumber}-axis-helper`).attr('value',d.Reading);
         }
 
         for (let c in pointPositions){
             if(!convertedData[c]){
-                pointPositions[c] = 0; //default to 0 when no data is given
+                //default to 0 when no data is given
+                pointPositions[c] = {
+                    position: 0,
+                    value: 0
+                }; 
             }else{
-                pointPositions[c] = scales[c](convertedData[c]);
+                pointPositions[c] = {
+                    position: scales[c](convertedData[c]),
+                    value: convertedData[c]
+                }
             }
         }
 
@@ -300,21 +330,13 @@ let Kiviat = function (parent, position,sensorNumber,scales){
     function draw(){   
         let points = [];
         for(let c in pointPositions){
-            // points.push(get_translation(c, pointPositions[c]));
-            let translation = get_translation(c,pointPositions[c]);
+            let translation = get_translation(c,pointPositions[c].position);
             points.push(translation);
-            // let point = self.graph.selectAll(`#${c}-${sensorNumber}`);
-            
-
-            // point.attr('cx', translation.x).attr('cy', translation.y);
         }
 
         points.push(points[0]);
         self.graph.select(`.current`).data([points])
+            .transition().duration(200)
             .attr('d', lineFunction)
-            .classed('current', true)
-
-        // selt.graph.selectAll('path').attr('d',lineFunction(points));
-
     }
 }

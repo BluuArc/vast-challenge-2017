@@ -9,10 +9,12 @@
 	<script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.2.6/d3.min.js"></script>
+	<script src="./src/js/tooltip.js"></script>
 	<script src="./src/js/graph.js"></script>
 	<!--<script src="./src/js/main.js"></script>-->
 </head>
 <body>
+	<div class="tooltip"></div>
 	<div class="container">
 		<div class="row">
 			<div class="col-sm-4 third">
@@ -63,10 +65,23 @@
 		</div>
 	</div>
 	<script>
-		let g = new Graph(); 
+ 		// d3.select('#graph').attr('style',`height: ${d3.select('.container>.row').node().offsetHeight}px;`);
+ 		d3.select('#graph').attr('style',`height: 100%;`);
+ 		let g = new Graph(d3.min([d3.select('.container>.row').node().offsetWidth, d3.select('.container>.row').node().offsetHeight]));
 		g.init(); 
 		g.drawFactories();
 		g.drawSensors();
+
+		// let autorefresh = setInterval("g.update()",500);
+
+		window.addEventListener('resize',function(){
+			d3.selectAll('#graph').each(function(d,i){
+				let curElem = d3.select(this);
+				let style = curElem.attr('style');
+				curElem.style('style',style);
+			});
+			console.log('resize');
+		});
 	</script>
 </body>
 </html>
