@@ -6,13 +6,12 @@ let Graph = function(size){
     let self = this;
     let min = d3.min([d3.select('#graph').node().offsetWidth, d3.select('#graph').node().offsetHeight]);
     size = size || min;
-    let w = size || min, h = size || min;
+    let w = 200, h = 200;
     let kiviatSize = 50;
-    let kiviatScale = 1;
-    let padding = 50;
-    let svg = d3.select('#graph').append('svg')//.attr('width',w).attr('height',h)
-        .attr('viewBox',`0 0 ${size} ${size}`)//.attr('preserveAspectRatio', `xMinYMin meet`);
-        .attr('style', `max-height:100%`);
+    let padding = 30;
+    let svg = d3.select('#graph').append('svg').classed('svg-content',true)//.attr('width','100%').attr('height','100%')
+        .attr('viewBox',`0 0 ${w} ${h}`).attr('preserveAspectRatio', `xMinYMin meet`);
+        // .attr('style', `max-height:100%`);
     let scales = {}, axes = {};
     let sensorGraphs  = [];
     let sensorLocations = [
@@ -52,7 +51,7 @@ let Graph = function(size){
 
         // scales.kiviatSize = {}
         kiviatSize = d3.min([scales.x(50+20), scales.y(20)])/2;
-        console.log(kiviatSize);
+        // console.log(kiviatSize);
         axes.x = d3.axisBottom(xScale);
         svg.append('g')
             .attr('class', 'axis')
@@ -69,7 +68,7 @@ let Graph = function(size){
     //should only be called once
     self.drawFactories = function(){
         let factories = svg.selectAll('.factory').data(factoryLocations);
-        let offset = kiviatSize * 0.25 * kiviatScale;
+        let offset = kiviatSize * 0.125;
         factories.exit().remove(); //remove excess
 
         //update current
@@ -83,6 +82,7 @@ let Graph = function(size){
             .attr('x', function (d) { return scales.x(d.location[0]) - offset/2; })
             .attr('y', function (d) { return scales.y(d.location[1]) - offset/2; })
         newFactories.append('text').classed('factory-label',true)
+            .attr('text-anchor','middle')
             .attr('x', function (d) { return scales.x(d.location[0]) - offset/2; })
             .attr('y', function (d) { return scales.y(d.location[1]) - offset/2; })
             .text(function(d) { return d.name.split(" ").map(function(n) { return n[0]}).join('');})
@@ -100,10 +100,9 @@ let Graph = function(size){
         
         sensors.enter().each(function(d,i){
             let curGraph = new Kiviat(svg,{
-                x: scales.x(d.location[0]) - (kiviatSize/2) * kiviatScale,
-                y: scales.y(d.location[1]) - (kiviatSize/2) * kiviatScale
+                x: scales.x(d.location[0]) - (kiviatSize/2),
+                y: scales.y(d.location[1]) - (kiviatSize/2)
             },d.name, scales,{
-                scale: kiviatScale,
                 w: kiviatSize,
                 h: kiviatSize
             });
@@ -113,7 +112,7 @@ let Graph = function(size){
         });
     };
 
-    self.update = function(){
+    self.update = function(data,options){
         for(let k of sensorGraphs){
             let data = [
                 { Chemical: 'Appluimonia', Reading: Math.random() * 2 },
@@ -125,64 +124,6 @@ let Graph = function(size){
         }
     }
 
-    self.draw = function(dataset, colorScale, dataScales){
-        self.scales = dataScales;
-        console.log("Received",dataset.length,"data points");
-        return new Promise(function(fulfill,reject){
-            let xScale = dataScales.xScale.range([padding, w - padding * 2]).nice(); //add padding to not go outside bounds
-            let yScale = dataScales.yScale.range([h - padding, padding]).nice(); //[h,0] makes it so that smaller numbers are lower; add padding to not go outside bounds
-
-            //create and remove circles as necessary
-            let circles = svg.selectAll('circle')
-                .data(dataset);
-            circles.exit().remove(); //remove excess as necessary
-
-            //update current selection
-            circles.attr('cx', function (d) { return xScale(d.X); })
-                    .attr('cy', function (d) { return yScale(d.Y); })
-                    // .attr('r', 1)
-                    .style('fill', function (d) { return colorScale(d.concentration); });
-
-            //create new as necessary
-            circles.enter() 
-                .append('circle')
-                .attr('cx', function(d){return xScale(d.X);})
-                .attr('cy', function(d){return yScale(d.Y);})
-                .attr('r', 1)
-                .style('fill', function(d){return colorScale(d.concentration);});
-            
-            //create axes
-            if(d3.selectAll('.axis').empty()){//prevent redraw
-                let xAxis = d3.axisBottom(xScale);
-                svg.append('g')
-                    .attr('class', 'axis')
-                    .attr('transform', 'translate(0,' + (h - padding) + ')') //move x-axis to bottom of image
-                    .call(xAxis);
-
-                let yAxis = d3.axisLeft(yScale);
-                svg.append('g')
-                    .attr('class', 'axis')
-                    .attr('transform', 'translate(' + padding + ',0)') //move y-axis right to have readable labels
-                    .call(yAxis);
-            }
-
-            //label axes
-            //based off of http://bl.ocks.org/phoebebright/3061203
-            if (d3.selectAll('.axis-label').empty()) {//prevent redraw
-                svg.append("text") //x axis label
-                    .classed('axis-label', true)
-                    .attr("text-anchor", "middle")
-                    .attr("transform", `translate(${w/2 - padding/2},${h})`)
-                    .text("X (Red Axis) Values");
-                svg.append("text") //y axis label
-                    .classed('axis-label',true)
-                    .attr("text-anchor","middle")
-                    .attr("transform", `translate(${padding*0.75/2},${h/2})rotate(-90)`)
-                    .text("Y (Green Axis) Values");
-            }
-            fulfill(); //done
-        });
-    };
 };
 
 let Kiviat = function (parent, position,sensorNumber,scales, options){
@@ -201,9 +142,9 @@ let Kiviat = function (parent, position,sensorNumber,scales, options){
         .y(function (d) { return d.y; });
 
     //create group on parent
-    parent.append('g').classed('kiviat', true).attr('id',`sensor-${sensorNumber}`)
+    parent.append('g').classed('kiviat', true).attr('id',`kiviat-sensor-${sensorNumber}`)
         .attr("transform", `translate(${position.x},${position.y}) scale(${options.scale || 1})`);
-    self.graph = d3.select(`#sensor-${sensorNumber}`);
+    self.graph = d3.select(`#kiviat-sensor-${sensorNumber}`);
 
     scales = scales || {}, axes = {};
     //default point position along each respective axis 
@@ -224,29 +165,28 @@ let Kiviat = function (parent, position,sensorNumber,scales, options){
 
         for(let chemical in lineData){
             // console.log(chemical,lineData[chemical]);
-            axes[chemical] = {
-                regular: self.graph.append('path')
+            axes[chemical] = {}
+            axes[chemical].regular = self.graph.append('path')
                     .data([lineData[chemical]])
-                    .attr('class', 'axis')
-                    .attr('d', lineFunction)
-                    .attr('id', `${chemical}-axis`),
-                helper: self.graph.append('path')
+                    .attr('class', 'axis').attr('id', `${chemical}-axis`)
+                    .classed('kiviat-axis',true)
+                    .attr('d', lineFunction);
+            axes[chemical].helper = self.graph.append('path')
                     .data([lineData[chemical]])
-                    .attr('class', 'axis-mouseover')
+                    .attr('class', 'axis-mouseover').attr('id', `${chemical}-${sensorNumber}-axis-helper`)
                     .attr('d', lineFunction)
-                    .attr('id', `${chemical}-${sensorNumber}-axis-helper`)
                     .attr('value', 0)
                     .on('mouseenter',function(d,i){
-                        // console.log("entered");
+                        console.log("entered");
                         let value = d3.select(this).attr('value');
                         tooltip.setContent(`${chemical}<br>${value} ppm`);
                         tooltip.showAt(d3.event.pageX, d3.event.pageY);
                     }).on('mouseleave',function(){
                         tooltip.hide();
-                        // console.log('left');
-                    })
-            }
+                        console.log('left');
+                    });
         }
+        console.log("Done setting up listeners");
         
     }
 
@@ -339,4 +279,115 @@ let Kiviat = function (parent, position,sensorNumber,scales, options){
             .transition().duration(200)
             .attr('d', lineFunction)
     }
+}
+
+let OverviewScatterPlot = function(parent, sensorNumber, scales, options){
+    let self = this;
+
+    options = options || {};
+    //kiviat dimensions
+    let min = d3.min([parent.node().offsetWidth, parent.node().offsetHeight]);
+    let w = options.w || +min,
+        h = options.h || +min*0.75;
+    let padding = 20;
+    let mode = ['days','weeks','months'];
+    self.mode_index = -1;
+
+    scales = scales || {}, axes = {};
+    //used to draw the lines on the graph
+    let lineFunction = d3.line()
+        .x(function (d) { return d.x; })
+        .y(function (d) { return d.y; });
+
+    //create group on parent
+    parent.append('svg').classed('overview_scatterplot', true).attr('id', `osp-sensor-${sensorNumber}`)
+        .attr("transform", `scale(${options.scale || 1})`)
+        // .attr('width',w).attr('height',h);
+    self.graph = d3.select(`#osp-sensor-${sensorNumber}`);
+
+    function drawAxes(){
+        let time_coords = [[{x:padding,y:h-padding},{x:w-padding*2,y:h-padding},{x:padding,y:h-padding}]];
+        let readings_coords = [[{x:padding,y:h-padding},{x:padding,y:padding},{x:padding,y:h-padding}]];
+        // console.log(chemical,lineData[chemical]);
+        axes.time = {
+            regular: self.graph.append('path')
+                .data(time_coords)
+                .attr('class', 'axis')
+                .attr('id', `osp-sensor${sensorNumber}-time-axis`)
+                .attr('d', lineFunction),
+            helper: self.graph.append('path')
+                .data(time_coords)
+                .attr('class', 'axis-mouseover')
+                .attr('d', lineFunction)
+                .attr('id', `osp-sensor${sensorNumber}-time-axis-helper`)
+                .attr('value', 0)
+                .on('mouseenter', function (d, i) {
+                    // console.log("entered");
+                    let value = d3.select(this).attr('value');
+                    tooltip.setContent(`Time (${mode[self.mode_index]})`);
+                    tooltip.showAt(d3.event.pageX, d3.event.pageY);
+                }).on('mouseleave', function () {
+                    tooltip.hide();
+                    // console.log('left');
+                })
+        };
+
+        axes.readings = {
+            regular: self.graph.append('path')
+                .data(readings_coords)
+                .attr('class', 'axis')
+                .attr('id', `osp-sensor${sensorNumber}-reading-axis`)
+                .attr('d', lineFunction),
+            helper: self.graph.append('path')
+                .data(readings_coords)
+                .attr('class', 'axis-mouseover')
+                .attr('d', lineFunction)
+                .attr('id', `osp-sensor${sensorNumber}-reading-axis-helper`)
+                .attr('value', 0)
+                .on('mouseenter', function (d, i) {
+                    // console.log("entered");
+                    let value = d3.select(this).attr('value');
+                    tooltip.setContent(`Chemical Readings (parts per million, ppm)`);
+                    tooltip.showAt(d3.event.pageX, d3.event.pageY);
+                }).on('mouseleave', function () {
+                    tooltip.hide();
+                    // console.log('left');
+                })
+        }
+    }
+
+    self.changeTimeMode = function(){
+        self.mode_index++;
+        if(self.mode_index >= mode.length){
+            self.mode_index = 0;
+        }
+        switch(mode[self.mode_index]){
+            case 'days': scales.time = scales.time.domain([0, 100]); break;
+            case 'weeks': scales.time = scales.time.domain([0, 15]); break;
+            case 'months': scales.time = scales.time.domain([0, 2]); break;
+        }
+
+    }
+
+    self.init = function () {
+        scales.time = (scales.time || d3.scaleLinear().domain([0,2])).range([padding,w-padding*2]);
+        scales.readings = (scales.readings || d3.scaleLinear().domain([0,2])).range([h-padding, padding]); //top axis;
+        //all dimensions are relative to top left corner of group (0,0)
+        scales.AppluimoniaX = (scales.Appluimonia || d3.scaleLinear().domain([0, 2])).range([h-padding, padding]); //top axis;
+
+        scales.Chlorodinine = (scales.Chlorodinine || d3.scaleLinear().domain([0, 2])).range([h-padding, padding]); //right axis
+
+        scales.Methylosmolene = (scales.Methylosmolene || d3.scaleLinear().domain([0, 2])).range([h-padding, padding]); //bottom axis
+
+        scales['AGOC-3A'] = (scales['AGOC-3A'] || d3.scaleLinear().domain([0, 2])).range([h-padding, padding]); //left axis
+
+        //draw axes
+        drawAxes();
+        self.changeTimeMode();
+
+        //put sensor number
+        self.graph.append('text').classed('sensor-label', true).attr('x', w * 0.9).attr('y', h * 0.25).text(sensorNumber);
+
+    };
+
 }

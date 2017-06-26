@@ -1,87 +1,46 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-	<title>VAST Challenge 2017 - Mini-Challenge 2</title>
+    <title>VAST Challenge 2017 - Mini-Challenge 2</title>
 
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
-	<link rel="stylesheet" href="./src/css/main.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="./src/css/main.css" />
 
-	<script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
-	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.2.6/d3.min.js"></script>
-	<script src="./src/js/tooltip.js"></script>
-	<script src="./src/js/graph.js"></script>
-	<!--<script src="./src/js/main.js"></script>-->
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.2.6/d3.min.js"></script>
+    <script src="./src/js/tooltip.js"></script>
+    <script src="./src/js/graph.js"></script>
+    <script src="./src/js/main.js"></script>
+    <!--<script src="./src/js/main.js"></script>-->
 </head>
+
 <body>
-	<div class="tooltip"></div>
-	<div class="container">
-		<div class="row">
-			<div class="col-sm-4 third">
-				<div class="overview_graphs">
-					<div class="row">
-						<div class="col-sm-4">
-							graph1
-						</div>
-						<div class="col-sm-4">
-							graph2
-						</div>
-						<div class="col-sm-4">
-							graph3
-						</div>
-					</div>
-					<div class="row">
-						<div class="col-sm-4">
-							graph4
-						</div>
-						<div class="col-sm-4">
-							graph5
-						</div>
-						<div class="col-sm-4">
-							graph6
-						</div>
-					</div>
-					<div class="row">
-						<div class="col-sm-4">
-							graph7
-						</div>
-						<div class="col-sm-4">
-							graph8
-						</div>
-						<div class="col-sm-4">
-							graph9
-						</div>
-					</div>
-				</div>
-			</div>
-			<div class="col-sm-4 third graph-container" id="graph">
-					<!--map-->
-				<div class="graph-content" id="graph2">
-				</div>
-			</div>
-			<div class="col-sm-4 third" id="detail">
-				detail
-			</div>
-		</div>
-	</div>
-	<script>
- 		// d3.select('#graph').attr('style',`height: ${d3.select('.container>.row').node().offsetHeight}px;`);
- 		d3.select('#graph').attr('style',`height: 100%;`);
- 		let g = new Graph(d3.min([d3.select('.container>.row').node().offsetWidth, d3.select('.container>.row').node().offsetHeight]));
+    <div class="tooltip"></div>
+    <div class="container">
+        <div class="row">
+            <p style="text-align:center;">slider</p>
+        </div>
+        <div class="row">
+            <div class="col-sm-4 main-column" id="overview">
+                overview
+            </div>
+            <div class="col-sm-4 main-column" id="kiviat-map">
+                <div class="svg-container" id="graph">
+                </div>
+            </div>
+            <div class="col-sm-4 main-column" id="detail">
+                detail
+            </div>
+        </div>
+    </div>
+    <script>
+        let g = new Graph();
 		g.init(); 
 		g.drawFactories();
 		g.drawSensors();
-
-		// let autorefresh = setInterval("g.update()",500);
-
-		window.addEventListener('resize',function(){
-			d3.selectAll('#graph').each(function(d,i){
-				let curElem = d3.select(this);
-				let style = curElem.attr('style');
-				curElem.style('style',style);
-			});
-			console.log('resize');
-		});
-	</script>
+    </script>
 </body>
+
 </html>
