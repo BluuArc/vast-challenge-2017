@@ -2,10 +2,9 @@
 
 var tooltip = tooltip || new Tooltip();
 
-let Graph = function(size){
+let Graph = function(){
     let self = this;
     let min = d3.min([d3.select('#graph').node().offsetWidth, d3.select('#graph').node().offsetHeight]);
-    size = size || min;
     let w = 200, h = 200;
     let kiviatSize = 50;
     let padding = 30;
@@ -63,10 +62,13 @@ let Graph = function(size){
             .attr('class', 'axis')
             .attr('transform', 'translate(' + padding + ',0)') //move y-axis right to have readable labels
             .call(axes.y);
+
+        drawFactories();
+        drawSensors();
     };
 
     //should only be called once
-    self.drawFactories = function(){
+    function drawFactories(){
         let factories = svg.selectAll('.factory').data(factoryLocations);
         let offset = kiviatSize * 0.125;
         factories.exit().remove(); //remove excess
@@ -88,7 +90,7 @@ let Graph = function(size){
             .text(function(d) { return d.name.split(" ").map(function(n) { return n[0]}).join('');})
     };
 
-    self.drawSensors = function(){
+    function drawSensors() {
         let sensors = svg.selectAll('.sensor').data(sensorLocations);
         sensors.exit().remove(); //remove excess
 
