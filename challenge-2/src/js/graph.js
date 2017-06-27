@@ -6,7 +6,7 @@ let Graph = function(){
     let self = this;
     let min = d3.min([d3.select('#graph').node().offsetWidth, d3.select('#graph').node().offsetHeight]);
     let w = 200, h = 200;
-    let kiviatSize = 50;
+    let kiviatSize = 25;
     let padding = 30;
     let svg = d3.select('#graph').append('svg').classed('svg-content',true)//.attr('width','100%').attr('height','100%')
         .attr('viewBox',`0 0 ${w} ${h}`).attr('preserveAspectRatio', `xMinYMin meet`);
@@ -26,10 +26,10 @@ let Graph = function(){
     ];
     self.svg = svg;
     let factoryLocations = [
-        { name:'Roadrunner Fitness Electronics', location: [89,27]},
-        { name:'Kasios Office Furniture', location: [90,21]},
-        { name:'Radiance ColourTek', location: [109,26]},
-        { name:'Indigo Sol Boards', location: [120,22]}
+        { name:'Roadrunner Fitness Electronics', location: [89,27], shape: 'square'},
+        { name:'Kasios Office Furniture', location: [90,21], shape: '+'},
+        { name:'Radiance ColourTek', location: [109,26], shape: 'circle'},
+        { name:'Indigo Sol Boards', location: [120,22], shape: 'x'}
     ];
     self.init = function(){
         scales.miles = d3.scaleLinear()
@@ -49,7 +49,7 @@ let Graph = function(){
         });
 
         // scales.kiviatSize = {}
-        kiviatSize = d3.min([scales.x(50+20), scales.y(20)])/2;
+        // kiviatSize = d3.min([scales.x(50), scales.y(20)])/2;
         // console.log(kiviatSize);
         axes.x = d3.axisBottom(xScale);
         svg.append('g')
@@ -73,33 +73,34 @@ let Graph = function(){
         let offset = kiviatSize * 0.125;
         factories.exit().remove(); //remove excess
 
-        //update current
-        // factories.attr('x', function (d) { return scales.x(d.location[0]) - offset/2; })
-        //     .attr('y', function (d) { return scales.y(d.location[1]) - offset/2; });
-
         //create new as necessary
         let newFactories = factories.enter();
-        newFactories.append('rect').classed('factory', true)
-            .attr('width', offset).attr('height', offset)
-            .attr('x', function (d) { return scales.x(d.location[0]) - offset/2; })
-            .attr('y', function (d) { return scales.y(d.location[1]) - offset/2; })
-        newFactories.append('text').classed('factory-label',true)
-            .attr('text-anchor','middle')
-            .attr('x', function (d) { return scales.x(d.location[0]) - offset/2; })
-            .attr('y', function (d) { return scales.y(d.location[1]) - offset/2; })
-            .text(function(d) { return d.name.split(" ").map(function(n) { return n[0]}).join('');})
+        newFactories.each(function(d,i){
+                let curFactory = d3.select(this);
+                if(d.shape === 'square'){
+                    curFactory = curFactory.append('rect')
+                        .attr('width', offset).attr('height', offset)
+                        .attr('x', function (d) { return scales.x(d.location[0]) - offset / 2; })
+                        .attr('y', function (d) { return scales.y(d.location[1]) - offset / 2; })
+                }else if(d.shape === 'circle'){
+                    curFactory = curFactory.append('circle')
+                        .attr('r', offset / 2).attr('cx', function (d) { return scales.x(d.location[0]) - offset / 2; })
+                        .attr('cy', function (d) { return scales.y(d.location[1]) - offset / 2; })
+                }else{ //shape is text character
+                    curFactory = curFactory.append('text').text(d.shape).attr('font-size', offset*3)
+                        .attr('x', function (d) { return scales.x(d.location[0])-offset/2; })
+                        .attr('y', function (d) { return scales.y(d.location[1]); })
+                }
+
+                curFactory.classed('factory', true);
+            });
     };
 
     function drawSensors() {
         let sensors = svg.selectAll('.sensor').data(sensorLocations);
         sensors.exit().remove(); //remove excess
 
-        //update current
-        // sensors.attr('cx', function (d) { return scales.x(d.location[0]); })
-        //     .attr('cy', function (d) { return scales.y(d.location[1]); });
-        
         //create new as necessary
-        
         sensors.enter().each(function(d,i){
             let curGraph = new Kiviat(svg,{
                 x: scales.x(d.location[0]) - (kiviatSize/2),
@@ -138,6 +139,7 @@ let Kiviat = function (parent, position,sensorNumber,scales, options){
         x: w/2,
         y: h/2
     };
+    // console.log("w h",w,h);
     //used to draw the lines on the graph
     let lineFunction = d3.line()
         .x(function (d) { return d.x; })
@@ -179,16 +181,16 @@ let Kiviat = function (parent, position,sensorNumber,scales, options){
                     .attr('d', lineFunction)
                     .attr('value', 0)
                     .on('mouseenter',function(d,i){
-                        console.log("entered");
+                        // console.log("entered");
                         let value = d3.select(this).attr('value');
                         tooltip.setContent(`${chemical}<br>${value} ppm`);
                         tooltip.showAt(d3.event.pageX, d3.event.pageY);
                     }).on('mouseleave',function(){
                         tooltip.hide();
-                        console.log('left');
+                        // console.log('left');
                     });
         }
-        console.log("Done setting up listeners");
+        // console.log("Done setting up listeners");
         
     }
 

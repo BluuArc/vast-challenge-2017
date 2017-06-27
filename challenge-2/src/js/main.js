@@ -2,7 +2,7 @@
 let Challenge2 = function(){
     let self = this;
     self.data = {};
-    self.middleMap = new Graph(d3.min([d3.select('.container>.row').node().offsetWidth, d3.select('.container>.row').node().offsetHeight]));
+    self.middleMap = new Graph();
     self.osp = [];
     function loadCSV(filename){
         return new Promise(function(fulfill,reject){
@@ -16,7 +16,7 @@ let Challenge2 = function(){
     function init(){
         loadData().then(function(){
             loadMiddleMap();
-            loadOSPs();
+            // loadOSPs();
         });
     }
     self.init = init;
@@ -34,6 +34,27 @@ let Challenge2 = function(){
         return sensors;
     }
 
+    function ensureEntryExistence(year,month,day,hour,db, newEntryFn){
+        if(!db[year]){
+            db[year] = {};
+        }
+        if(!db[year][month]){
+            db[year][month] = {};
+        }
+        if(!db[year][month][day]){
+            db[year][month][day] = {};
+        }
+        if(!db[year][month][day][hour]){
+            db[year][month][day][hour] = newEntryFn();
+        }
+    }
+
+    function getTimeEntry(time,db, newEntryFn){
+        let [year, month, day, hour] = [time.getFullYear().toString(), time.getMonth().toString(), time.getDate().toString(), time.getHours().toString()];
+        ensureEntryExistence(year, month, day, hour, db, newEntryFn);
+        return db[year][month][day][hour];
+    }
+
     function loadData(){
         let windLoad = loadCSV('data/Meteorological Data.csv');
         let chemicalLoad = loadCSV('data/Sensor Data.csv');
@@ -49,40 +70,41 @@ let Challenge2 = function(){
                     chemical: results[1]
                 };
             }).then(function(data){
-                //key objects by timestamp
+                //key objects by timestamp (<db_variable>[year][month][day][hour] = <data>)
                 let wind = {};
                 for(let w of data.wind){
-                    if(wind[w.Date]){
-                        console.log(`${w.Date} already exists`);
-                    }
-                    wind[w.Date] = {
-                        speed: w["Wind Speed (m/s)"],
-                        direction: w["Wind Direction"]
-                    };
+                    let curTime = new Date(w.Date);
+                    getTimeEntry(curTime, wind, function(){
+                        return {
+                            speed: w["Wind Speed (m/s)"],
+                            direction: w["Wind Direction"]
+                        };
+                    });
                 }
 
                 let chemical = {};
                 for(let c of data.chemical){
-                    let curTime = c["Date Time "];
-                    if(!chemical[curTime]){
-                        chemical[curTime] = createSensors();
-                    }
+                    let curTime = new Date(c["Date Time "]);
+                    let timeEntry = getTimeEntry(curTime,chemical, createSensors);
                     max = (c.Reading > max) ? c.Reading : max;
                     min = (c.Reading < min) ? c.Reading : min;
-                    chemical[curTime][`sensor${c.Monitor}`][c.Chemical].push(c.Reading);
-                    if(chemical[curTime][`sensor${c.Monitor}`][c.Chemical].length !== 1)
-                        console.log(++count,curTime, `sensor${c.Monitor}`, c.Chemical, chemical[curTime][`sensor${c.Monitor}`][c.Chemical], c.Reading);
+                    timeEntry[`sensor${c.Monitor}`][c.Chemical].push(c.Reading);
+                    if(timeEntry[`sensor${c.Monitor}`][c.Chemical].length !== 1)
+                        console.log(++count,curTime, `sensor${c.Monitor}`, c.Chemical, timeEntry[`sensor${c.Monitor}`][c.Chemical], c.Reading);
                 }
-                console.log("Done",count);
+                self.data = {
+                    wind: wind,
+                    chemical: chemical
+                };
+                console.log("Done. Number of erronous chemical entries",count);
                 console.log(min,max);
+                return;
             });
     }
     this.loadData = loadData;
 
     function loadMiddleMap(){
         self.middleMap.init();
-        self.middleMap.drawFactories();
-        self.middleMap.drawSensors();
     }
     // self.loadMiddleMap = loadMiddleMap;
 
