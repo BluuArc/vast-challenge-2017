@@ -74,12 +74,16 @@ let Challenge2 = function(){
                 let wind = {};
                 for(let w of data.wind){
                     let curTime = new Date(w.Date);
-                    getTimeEntry(curTime, wind, function(){
-                        return {
-                            speed: w["Wind Speed (m/s)"],
-                            direction: w["Wind Direction"]
-                        };
+                    let timeEntry = getTimeEntry(curTime, wind, function(){
+                        return [];
                     });
+                    timeEntry.push({
+                        speed: w["Wind Speed (m/s)"],
+                        direction: w["Wind Direction"]
+                    });
+                    if(timeEntry.length !== 1){
+                        console.log("Wind Data Error:",w.Date,timeEntry);
+                    }
                 }
 
                 let chemical = {};
@@ -90,14 +94,14 @@ let Challenge2 = function(){
                     min = (c.Reading < min) ? c.Reading : min;
                     timeEntry[`sensor${c.Monitor}`][c.Chemical].push(c.Reading);
                     if(timeEntry[`sensor${c.Monitor}`][c.Chemical].length !== 1)
-                        console.log(++count,curTime, `sensor${c.Monitor}`, c.Chemical, timeEntry[`sensor${c.Monitor}`][c.Chemical], c.Reading);
+                        console.log("Chemical Data Error:",++count,curTime, `sensor${c.Monitor}`, c.Chemical, timeEntry[`sensor${c.Monitor}`][c.Chemical], c.Reading);
                 }
                 self.data = {
                     wind: wind,
                     chemical: chemical
                 };
                 console.log("Done. Number of erronous chemical entries",count);
-                console.log(min,max);
+                // console.log(min,max);
                 return;
             });
     }

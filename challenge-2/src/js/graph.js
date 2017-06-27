@@ -7,7 +7,7 @@ let Graph = function(){
     let min = d3.min([d3.select('#graph').node().offsetWidth, d3.select('#graph').node().offsetHeight]);
     let w = 200, h = 200;
     let kiviatSize = 25;
-    let padding = 30;
+    let padding = 25;
     let svg = d3.select('#graph').append('svg').classed('svg-content',true)//.attr('width','100%').attr('height','100%')
         .attr('viewBox',`0 0 ${w} ${h}`).attr('preserveAspectRatio', `xMinYMin meet`);
         // .attr('style', `max-height:100%`);
@@ -94,7 +94,7 @@ let Graph = function(){
 
                 curFactory.classed('factory', true);
             });
-    };
+    }
 
     function drawSensors() {
         let sensors = svg.selectAll('.sensor').data(sensorLocations);
@@ -113,7 +113,7 @@ let Graph = function(){
             curGraph.update();
             sensorGraphs.push(curGraph);
         });
-    };
+    }
 
     self.update = function(data,options){
         for(let k of sensorGraphs){
@@ -125,7 +125,7 @@ let Graph = function(){
             ];
             k.update(data);
         }
-    }
+    };
 
 };
 
@@ -159,7 +159,7 @@ let Kiviat = function (parent, position,sensorNumber,scales, options){
         'AGOC-3A': {position: w/2, value: 0} //w/2 to 0
     };
 
-    function drawAxes(){
+    function drawAxes(contentFn){
         let lineData = {
             'Appluimonia': [{x:w/2,y:h/2}, {x:w/2, y:0}], //h/2 to 0
             'Chlorodinine': [{x:w/2,y:h/2}, {x:w, y:h/2}], //w/2 to w
@@ -183,7 +183,10 @@ let Kiviat = function (parent, position,sensorNumber,scales, options){
                     .on('mouseenter',function(d,i){
                         // console.log("entered");
                         let value = d3.select(this).attr('value');
-                        tooltip.setContent(`${chemical}<br>${value} ppm`);
+                        if(!contentFn || typeof contentFn !== "function")
+                            tooltip.setContent(`<b class="${chemical}">${chemical}</b><br>${value} ppm`);
+                        else    
+                            tooltip.setContent(contentFn);
                         tooltip.showAt(d3.event.pageX, d3.event.pageY);
                     }).on('mouseleave',function(){
                         tooltip.hide();

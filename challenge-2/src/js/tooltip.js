@@ -9,7 +9,7 @@ var Tooltip = function(){
         div = d3.select('div.tooltip');
         div.style('opacity', 1)
             .style('left', `${x}px`)
-            .style('top',  `${y-28}px`);
+            .style('top',  `${y-35}px`);
     };
 
     self.setContent = function(content){
