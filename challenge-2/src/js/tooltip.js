@@ -8,7 +8,7 @@ var Tooltip = function(){
         // console.log('received coords',x,y);
         div = d3.select('div.tooltip');
         div.style('opacity', 1)
-            .style('left', `${x}px`)
+            .style('left', `${x+15}px`)
             .style('top',  `${y-35}px`);
     };
 

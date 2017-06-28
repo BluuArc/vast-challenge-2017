@@ -31,7 +31,8 @@ let Graph = function(){
         { name:'Radiance ColourTek', location: [109,26], shape: 'circle'},
         { name:'Indigo Sol Boards', location: [120,22], shape: 'x'}
     ];
-    self.init = function(){
+    self.init = function(options){
+        scales = options.scales || scales;
         scales.miles = d3.scaleLinear()
             .domain([0, 200])
             .range([0, 12]);
@@ -48,6 +49,13 @@ let Graph = function(){
             return yScale(scales.miles(value));
         });
 
+        let borderWidth = xScale.range()[1] - xScale.range()[0];
+        let borderHeight = yScale.range()[0] - yScale.range()[1];
+        // svg.append('rect').classed('graph-border',true)
+        //     .attr('x',padding).attr('y',padding)
+        //     .attr('width',(borderWidth > 0) ? borderWidth : (borderWidth*-1))
+        //     .attr('height',(borderHeight > 0) ? borderHeight : (borderHeight*-1));
+
         // scales.kiviatSize = {}
         // kiviatSize = d3.min([scales.x(50), scales.y(20)])/2;
         // console.log(kiviatSize);
@@ -57,7 +65,7 @@ let Graph = function(){
             .attr('transform', 'translate(0,' + (h - padding) + ')') //move x-axis to bottom of image
             .call(axes.x);
 
-        axes.y = d3.axisLeft(yScale);
+        axes.y = d3.axisLeft(yScale).ticks(6);
         svg.append('g')
             .attr('class', 'axis')
             .attr('transform', 'translate(' + padding + ',0)') //move y-axis right to have readable labels
@@ -97,6 +105,7 @@ let Graph = function(){
     }
 
     function drawSensors() {
+        console.log("scales before draw sensors",scales);
         let sensors = svg.selectAll('.sensor').data(sensorLocations);
         sensors.exit().remove(); //remove excess
 
@@ -115,15 +124,23 @@ let Graph = function(){
         });
     }
 
-    self.update = function(data,options){
-        for(let k of sensorGraphs){
-            let data = [
-                { Chemical: 'Appluimonia', Reading: Math.random() * 2 },
-                { Chemical: 'Chlorodinine', Reading: Math.random() * 2 },
-                { Chemical: 'Methylosmolene', Reading: Math.random() * 2 },
-                { Chemical: 'AGOC-3A', Reading: Math.random() * 2 },
-            ];
-            k.update(data);
+    //data input is an object with 2 keys: wind and chemical
+    //chemical has keys sensor1,sensor2,...,sensor9
+    //each sensor object has 4 arrays, each keyed by chemical name
+    //wind is an array where each index object has keys direction and speed
+    self.update = function(data){
+        // console.log("Entered update with",data);
+        let readings = data.chemical;
+        for(let sensor in readings){
+            let sensorIndex = +(sensor.split('sensor')[1])-1;
+            if(isNaN(sensorIndex)){ //not a sensor object
+                console.log(sensor,"is not a sensor field; skipping");
+                continue;
+            }else{
+                // console.log("updating sensor",sensorIndex+1,"with",readings[sensor]);
+            }
+            let curGraph = sensorGraphs[sensorIndex];
+            curGraph.update(readings[sensor]);
         }
     };
 
@@ -139,6 +156,9 @@ let Kiviat = function (parent, position,sensorNumber,scales, options){
         x: w/2,
         y: h/2
     };
+    let heightOffset = h*0.05;
+    let widthOffset = w*0.05;
+    let notificationBubble;
     // console.log("w h",w,h);
     //used to draw the lines on the graph
     let lineFunction = d3.line()
@@ -181,12 +201,14 @@ let Kiviat = function (parent, position,sensorNumber,scales, options){
                     .attr('d', lineFunction)
                     .attr('value', 0)
                     .on('mouseenter',function(d,i){
-                        // console.log("entered");
+                        //default entry values
                         let value = d3.select(this).attr('value');
-                        if(!contentFn || typeof contentFn !== "function")
-                            tooltip.setContent(`<b class="${chemical}">${chemical}</b><br>${value} ppm`);
-                        else    
-                            tooltip.setContent(contentFn);
+                        let domain = scales[chemical].domain();
+                        let content = `<b class="${chemical}">${chemical}</b><br>${value} ppm`;
+                        content += `<br>Overall Min: ${domain[0]}<br>Overall Max: ${domain[1]}`;
+                        if(typeof contentFn === "function")
+                            content = contentFn(d,i);
+                        tooltip.setContent(content);
                         tooltip.showAt(d3.event.pageX, d3.event.pageY);
                     }).on('mouseleave',function(){
                         tooltip.hide();
@@ -198,20 +220,25 @@ let Kiviat = function (parent, position,sensorNumber,scales, options){
     }
 
     self.init = function(){        
-        //all dimensions are relative to top left corner of group (0,0)
-        scales.Appluimonia = (scales.Appluimonia || d3.scaleLinear().domain([0, 2])).range([h/2,0]); //top axis;
-
-        scales.Chlorodinine = (scales.Chlorodinine || d3.scaleLinear().domain([0,2])).range([w/2,w]); //right axis
-
-        scales.Methylosmolene = (scales.Methylosmolene || d3.scaleLinear().domain([0,2])).range([h/2,h]); //bottom axis
-        
-        scales['AGOC-3A'] = (scales['AGOC-3A'] || d3.scaleLinear().domain([0,2])).range([w/2,0]); //left axis
+        //initialize scale range to be with respect to kiviat
+        scales.Appluimonia = (scales.Appluimonia || d3.scaleLinear().domain([0, 2])).range([h/2-heightOffset,0]); //top axis;
+        scales.Chlorodinine = (scales.Chlorodinine || d3.scaleLinear().domain([0,2])).range([w/2+widthOffset,w]); //right axis
+        scales.Methylosmolene = (scales.Methylosmolene || d3.scaleLinear().domain([0,2])).range([h/2+heightOffset,h]); //bottom axis
+        scales['AGOC-3A'] = (scales['AGOC-3A'] || d3.scaleLinear().domain([0,2])).range([w/2-widthOffset,0]); //left axis
 
         //draw axes
         drawAxes();
 
         //put sensor number
-        self.graph.append('text').classed('sensor-label',true).attr('x',w*0.1).attr('y',h*0.1).text(sensorNumber);
+        self.graph.append('text').classed('sensor-label',true)
+            .attr('x',w*0.125).attr('y',h*0.125)
+            .text(sensorNumber)
+            .attr('text-anchor','middle')
+            .attr('alignment-baseline', 'middle');
+        notificationBubble = self.graph.append('circle').classed('sensor-label-mouseover',true)
+            .attr('cx', w*0.125).attr('cy', h*0.0775)
+            .attr('r','4px');
+
 
         //draw initial point positions
         let points = [];
@@ -219,7 +246,6 @@ let Kiviat = function (parent, position,sensorNumber,scales, options){
             let translation = get_translation(c, pointPositions[c].position);
             points.push(translation);
         }
-
         points.push(points[0]);
         self.graph.append('path').data([points])
             .attr('d', lineFunction)
@@ -227,34 +253,68 @@ let Kiviat = function (parent, position,sensorNumber,scales, options){
             .attr('id',`data.${sensorNumber}`);
 
     };
+    
+    function notifyError(isError,message){
+        console.log("Entered isError for sensor",sensorNumber);
+        if(isError){
+            notificationBubble.classed('error',true)
+                .on('mouseenter', function () {
+                    tooltip.setContent(message);
+                    tooltip.showAt(d3.event.pageX, d3.event.pageY);
+                }).on('mouseleave', function () {
+                    tooltip.hide();
+                });
+        }else{
+            notificationBubble.classed('error',false)
+                .on('mouseenter',undefined)
+                .on('mouseleave',undefined);
+        }
+    }
 
     self.update = function(data){
         //sample data set
-        data = data || [
-            { Chemical: 'Appluimonia', Reading: 1.25 },
-            { Chemical: 'Chlorodinine', Reading: 1.8 },
-            { Chemical: 'Methylosmolene', Reading: 0.75 },
-            { Chemical: 'AGOC-3A', Reading: 1 },
-        ];
+        data = data || { 
+            'Appluimonia': [1.25],
+            'Chlorodinine': [1.8],
+            'Methylosmolene': [0.75],
+            'AGOC-3A': [1] 
+        };
 
         //convert data to object keyed by chemical name
         let convertedData = {};
-        for(let d of data){
-            convertedData[d.Chemical] = d.Reading;
-            d3.select(`#${d.Chemical}-${sensorNumber}-axis-helper`).attr('value',d.Reading);
+        for(let d in data){
+            convertedData[d] = ((arr) => {
+                switch(arr.length){
+                    case 0: return 0;
+                    case 1: return arr[0];
+                    default: return arr;
+                }
+            })(data[d]);
+
+            d3.select(`#${d}-${sensorNumber}-axis-helper`).attr('value',JSON.stringify(convertedData[d]));
         }
 
         for (let c in pointPositions){
             if(!convertedData[c]){
                 //default to 0 when no data is given
                 pointPositions[c] = {
-                    position: 0,
+                    position: scales[c](scales[c].domain()[0]),
                     value: 0
                 }; 
             }else{
-                pointPositions[c] = {
-                    position: scales[c](convertedData[c]),
-                    value: convertedData[c]
+                if(convertedData[c] instanceof Array){
+                    console.log("Data is an array", convertedData[c]);
+                    notifyError(true, `<b class="${c}">${c}</b> has more than one reading`);
+                    pointPositions[c] = {
+                        position: scales[c](scales[c].domain()[0]),
+                        value: 0
+                    };
+                }else{
+                    notifyError(false);
+                    pointPositions[c] = {
+                        position: scales[c](convertedData[c]),
+                        value: convertedData[c]
+                    }
                 }
             }
         }
@@ -283,7 +343,7 @@ let Kiviat = function (parent, position,sensorNumber,scales, options){
 
         points.push(points[0]);
         self.graph.select(`.current`).data([points])
-            .transition().duration(200)
+            .transition().duration(50)
             .attr('d', lineFunction)
     }
 }

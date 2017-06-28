@@ -20,7 +20,8 @@
     <div class="tooltip"></div>
     <div class="container">
         <div class="row">
-            <p style="text-align:center;">slider</p>
+            <input id="timestamp-slider" type="range" value="0" style="max-width: 90%;margin-left:5%;"/>
+            <p id="current-time-stamp" style="text-align:center;">slider</p>
         </div>
         <div class="row">
             <div class="col-sm-6 main-column" id="overview">
@@ -35,8 +36,18 @@
     <script>
         // let g = new Graph();
 		// g.init();
+        let timestamps,timestamp_slider;
+        function updateMiddleMap(){
+            challenge2.updateMiddleMap(timestamps[timestamp_slider.node().value]);
+            d3.select('#current-time-stamp').text(timestamps[timestamp_slider.node().value])
+        }
         let challenge2 = new Challenge2();
-        challenge2.init(); 
+        challenge2.init().then(function(){
+            timestamps = challenge2.getChemicalTimeStamps();
+            timestamp_slider = d3.select('#timestamp-slider');
+            timestamp_slider.attr('max',timestamps.length-1);
+            timestamp_slider.on('input',updateMiddleMap);
+        }); 
     </script>
 </body>
 

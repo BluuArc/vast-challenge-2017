@@ -14,9 +14,11 @@ let Challenge2 = function(){
     }
 
     function init(){
-        loadData().then(function(){
+        return loadData().then(function(){
             loadMiddleMap();
             // loadOSPs();
+
+            return;
         });
     }
     self.init = init;
@@ -159,9 +161,17 @@ let Challenge2 = function(){
                     chemical: chemical
                 };
 
+                //create linear scales for each statistic
+                for(let chem in statistics.chemical){
+                    let curStat = statistics.chemical[chem];
+                    curStat.scale = d3.scaleLinear().domain([(curStat.min < 0) ? curStat.min : 0, curStat.max]);
+                }
+
+                statistics.wind.scale = d3.scaleLinear().domain([statistics.wind.max,statistics.wind.max]);
+
                 self.data.wind._statistics = statistics.wind;
                 self.data.chemical._statistics = statistics.chemical;
-                console.log("Done. Number of erronous chemical entries",count);
+                console.log("Done loading data. Number of erronous chemical entries",count);
                 // console.log(min,max);
                 return;
             });
@@ -169,9 +179,43 @@ let Challenge2 = function(){
     this.loadData = loadData;
 
     function loadMiddleMap(){
-        self.middleMap.init();
+        let options = {
+            scales: {
+                Appluimonia: self.data.chemical._statistics.Appluimonia.scale,
+                Chlorodinine: self.data.chemical._statistics.Chlorodinine.scale,
+                Methylosmolene: self.data.chemical._statistics.Methylosmolene.scale,
+                'AGOC-3A': self.data.chemical._statistics['AGOC-3A'].scale,
+                wind: self.data.wind._statistics.scale
+            }
+        }
+        self.middleMap.init(options);
     }
     // self.loadMiddleMap = loadMiddleMap;
+    function getDataAtTimeStamp(time){
+        let chemical = self.data.chemical[time];
+        let wind = self.data.wind[time];
+        return {
+            chemical: chemical,
+            wind: wind
+        };
+    }
+
+    function updateMiddleMap(sensorObject){
+        if(typeof sensorObject === "string"){
+            sensorObject = getDataAtTimeStamp(sensorObject);
+        }
+        self.middleMap.update(sensorObject);
+    }
+    self.updateMiddleMap = updateMiddleMap;
+
+    function getChemicalTimeStamps(){
+        let timestamps = Object.keys(self.data.chemical);
+        timestamps = timestamps.filter((d) => {
+            return (new Date(d)) != "Invalid Date"; //filter out non-timestamp keys
+        });
+        return timestamps;
+    }
+    self.getChemicalTimeStamps = getChemicalTimeStamps;
 
     function loadOSPs(){
         let osp = new OverviewScatterPlot(d3.select('#osp-container-1'),1);
