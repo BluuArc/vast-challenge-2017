@@ -47,6 +47,7 @@
             timestamp_slider = d3.select('#timestamp-slider');
             timestamp_slider.attr('max',timestamps.length-1);
             timestamp_slider.on('input',updateMiddleMap);
+            updateMiddleMap(); //set middlmap to show data for first timestamp
         }); 
     </script>
 </body>

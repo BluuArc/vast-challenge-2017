@@ -4,8 +4,7 @@ var tooltip = tooltip || new Tooltip();
 
 let Graph = function(){
     let self = this;
-    let min = d3.min([d3.select('#graph').node().offsetWidth, d3.select('#graph').node().offsetHeight]);
-    let w = 200, h = 200;
+    let w = 300, h = 300;
     let kiviatSize = 25;
     let padding = 25;
     let svg = d3.select('#graph').append('svg').classed('svg-content',true)//.attr('width','100%').attr('height','100%')
@@ -204,8 +203,9 @@ let Kiviat = function (parent, position,sensorNumber,scales, options){
                         //default entry values
                         let value = d3.select(this).attr('value');
                         let domain = scales[chemical].domain();
-                        let content = `<b class="${chemical}">${chemical}</b><br>${value} ppm`;
-                        content += `<br>Overall Min: ${domain[0]}<br>Overall Max: ${domain[1]}`;
+                        let content = `<b class="${chemical}">${chemical}</b><br>`
+                        content += `<b>Reading:</b> ${value} ppm`;
+                        content += `<br><b>Overall Min:</b> ${domain[0]}<br><b>Overall Max:</b> ${domain[1]}`;
                         if(typeof contentFn === "function")
                             content = contentFn(d,i);
                         tooltip.setContent(content);
@@ -294,6 +294,7 @@ let Kiviat = function (parent, position,sensorNumber,scales, options){
             d3.select(`#${d}-${sensorNumber}-axis-helper`).attr('value',JSON.stringify(convertedData[d]));
         }
 
+        let error_messages = [];
         for (let c in pointPositions){
             if(!convertedData[c]){
                 //default to 0 when no data is given
@@ -304,7 +305,7 @@ let Kiviat = function (parent, position,sensorNumber,scales, options){
             }else{
                 if(convertedData[c] instanceof Array){
                     console.log("Data is an array", convertedData[c]);
-                    notifyError(true, `<b class="${c}">${c}</b> has more than one reading`);
+                    error_messages.push(`<b class="${c}">${c}</b> has more than one reading`);
                     pointPositions[c] = {
                         position: scales[c](scales[c].domain()[0]),
                         value: 0
@@ -317,6 +318,12 @@ let Kiviat = function (parent, position,sensorNumber,scales, options){
                     }
                 }
             }
+        }
+        //change notification bubble if any errors were encountered
+        if(error_messages.length > 0){
+            notifyError(true, error_messages.join('<br>'));
+        }else{
+            notifyError(false);
         }
 
         draw();
