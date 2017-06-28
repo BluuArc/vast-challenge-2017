@@ -10,6 +10,7 @@
     <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.2.6/d3.min.js"></script>
+    <script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
     <script src="./src/js/tooltip.js"></script>
     <script src="./src/js/graph.js"></script>
     <script src="./src/js/main.js"></script>
@@ -22,6 +23,10 @@
         <div class="row">
             <input id="timestamp-slider" type="range" value="0" style="max-width: 90%;margin-left:5%;"/>
             <p id="current-time-stamp" style="text-align:center;">slider</p>
+            <div id="step-buttons" style="text-align:center">
+                <button onclick="changeTime(-1)">Step Back</button>
+                <button onclick="changeTime(1)">Step Forward</button>
+            </div>
         </div>
         <div class="row">
             <div class="col-sm-6 main-column" id="overview">
@@ -40,6 +45,12 @@
         function updateMiddleMap(){
             challenge2.updateMiddleMap(timestamps[timestamp_slider.node().value]);
             d3.select('#current-time-stamp').text(timestamps[timestamp_slider.node().value])
+        }
+
+        function changeTime(amount){
+            console.log(timestamp_slider.node().value,amount);
+            timestamp_slider.node().value = +(timestamp_slider.node().value) + +amount;
+            updateMiddleMap();
         }
         let challenge2 = new Challenge2();
         challenge2.init().then(function(){

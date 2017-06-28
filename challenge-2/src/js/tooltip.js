@@ -6,7 +6,7 @@ var Tooltip = function(){
 
     self.showAt = function(x,y){
         // console.log('received coords',x,y);
-        div = d3.select('div.tooltip');
+        let div = d3.select('div.tooltip');
         div.style('opacity', 1)
             .style('left', `${x+15}px`)
             .style('top',  `${y-35}px`);
@@ -14,13 +14,13 @@ var Tooltip = function(){
 
     self.setContent = function(content){
         // console.log('received content',JSON.stringify(content,null,2));
-        div = d3.select('div.tooltip');
+        let div = d3.select('div.tooltip');
         div.html(content);
     }
 
     self.hide = function(){
         // console.log('hiding');
-        div = d3.select('div.tooltip');
+        let div = d3.select('div.tooltip');
         div.style('opacity',0);
     }
 };

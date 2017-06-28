@@ -12,6 +12,7 @@ let Graph = function(){
         // .attr('style', `max-height:100%`);
     let scales = {}, axes = {};
     let sensorGraphs  = [];
+    let windGlyphs = [];
     let sensorLocations = [
         {name: '1', location: [62, 21]},
         {name: '2', location: [66, 35]},
@@ -70,9 +71,53 @@ let Graph = function(){
             .attr('transform', 'translate(' + padding + ',0)') //move y-axis right to have readable labels
             .call(axes.y);
 
+        drawWindGlyphs();
         drawFactories();
         drawSensors();
+
+        
+
+
+        // svg.append('polyline')
+        //     .attr('points','50,50 50,60')
+        //     .attr('fill','none')
+        //     .attr('stroke','black')
+        //     .attr('stroke-width','2')
+        //     .attr('marker-end','url{#Triangle)')
     };
+
+    function drawWindGlyphs(){
+        //based off of https://codepen.io/zxhfighter/pen/wWKqqX 
+        svg.append('defs').append('marker')
+            .attr('id', 'arrow')
+            .attr('viewBox', '0 0 12 12')
+            .attr('refX', '6')
+            .attr('refY', '6')
+            .attr('markerWidth', '12')
+            .attr('markerHeight', '12')
+            .attr('orient', 'auto');
+        svg.select('#arrow').append('path')
+            .attr('d', 'M2,2 L10,6 L2,10 L6,6 L2,2')
+            .classed('wind-glyph', true);
+
+        for(let i = 1; i < 4; ++i){
+            for(let j = 1; j < 4; ++j){
+                let defaultTransform = `translate(${w*0.25*i},${h*0.25*j}) scale(2)`;
+                let curGlpyh = svg.append("line")
+                    .attr("x1", 0)
+                    .attr("y1", 1)
+                    .attr("x2", 0)
+                    .attr("y2", 0)
+                    .attr("marker-end", "url(#arrow)")
+                    .attr('transform', defaultTransform)
+                    .classed('wind-glyph', true);
+                windGlyphs.push({
+                    glyph: curGlpyh,
+                    transformation: defaultTransform
+                });
+            }
+        }
+    }
 
     //should only be called once
     function drawFactories(){
@@ -123,24 +168,45 @@ let Graph = function(){
         });
     }
 
-    //data input is an object with 2 keys: wind and chemical
-    //chemical has keys sensor1,sensor2,...,sensor9
-    //each sensor object has 4 arrays, each keyed by chemical name
-    //wind is an array where each index object has keys direction and speed
-    self.update = function(data){
-        // console.log("Entered update with",data);
-        let readings = data.chemical;
-        for(let sensor in readings){
-            let sensorIndex = +(sensor.split('sensor')[1])-1;
-            if(isNaN(sensorIndex)){ //not a sensor object
-                console.log(sensor,"is not a sensor field; skipping");
+    function updateSensors(readings){
+        for (let sensor in readings) {
+            let sensorIndex = +(sensor.split('sensor')[1]) - 1;
+            if (isNaN(sensorIndex)) { //not a sensor object
+                console.log(sensor, "is not a sensor field; skipping");
                 continue;
-            }else{
+            } else {
                 // console.log("updating sensor",sensorIndex+1,"with",readings[sensor]);
             }
             let curGraph = sensorGraphs[sensorIndex];
             curGraph.update(readings[sensor]);
         }
+    }
+
+    //data input is an object with 2 keys: wind and chemical
+    //chemical has keys sensor1,sensor2,...,sensor9
+    //each sensor object has 4 arrays, each keyed by chemical name
+    //wind is an array where each index object has keys direction and speed
+    self.update = function(data){
+        console.log("Entered update with",data);
+        updateSensors(data.chemical);
+
+        let windData = data.wind;
+        if(windData){
+            if(windData.length > 0){
+                let rotationAngle = windData[0].direction;
+                for(let arrow of windGlyphs){
+                    arrow.glyph.classed('hide',false)
+                        .attr('transform', `${arrow.transformation} rotate(${rotationAngle})`);
+                }
+            }else{
+                for (let arrow of windGlyphs) {
+                    arrow.glyph.classed('hide', true)
+                        .attr('transform', `${arrow.transformation}`);
+                }
+            }
+        }
+
+        
     };
 
 };
@@ -255,7 +321,7 @@ let Kiviat = function (parent, position,sensorNumber,scales, options){
     };
     
     function notifyError(isError,message){
-        console.log("Entered isError for sensor",sensorNumber);
+        // console.log("Entered isError for sensor",sensorNumber);
         if(isError){
             notificationBubble.classed('error',true)
                 .on('mouseenter', function () {
@@ -352,6 +418,44 @@ let Kiviat = function (parent, position,sensorNumber,scales, options){
         self.graph.select(`.current`).data([points])
             .transition().duration(50)
             .attr('d', lineFunction)
+    }
+}
+
+let WindArrows = function(parent,scaleX,scaleY,options){
+    options = options || {};
+    let self = this;
+
+    //create group on parent
+    self.group = parent.append('g').classed('wind-arrows', true);
+
+    self.init = function(){
+        //create coordinates for arrows
+        let coords = [];
+        for(let i = 1; i <= 4; ++i){
+            for(let j = 1; j <= 4; ++j){
+                coords.push({
+                    x: scaleX(0.25*i),
+                    y: scaleY(0.25*j)
+                });
+            }
+        }
+
+        console.log(coords.length);
+
+        //plot arrows along parent
+        self.group.selectAll('.wind-arrow').data(coords)
+            .enter().append('marker')
+            .attr("refX", 6)
+            .attr("refY", 6)
+            .attr("markerWidth", 30)
+            .attr("markerHeight", 30)
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M 0 0 12 6 0 12 3 6")
+            .style("fill", "black")
+            .attr('transform',function(d,i){
+                return `translate(${d.x},${d.y})`
+            });
     }
 }
 

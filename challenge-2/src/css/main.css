@@ -148,3 +148,14 @@ div.tooltip {
     border-radius: 8px;
     pointer-events: none;
 }
+
+.wind-glyph,line.wind-glyph {
+    fill: gray;
+    stroke: none;
+    opacity: 0.40;
+}
+
+.wind-glyph.hide,
+line.wind-glyph.hide {
+    opacity: 0;
+}
