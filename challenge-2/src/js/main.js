@@ -2,8 +2,10 @@
 let Challenge2 = function(){
     let self = this;
     self.data = {};
-    self.middleMap = new Graph();
+    self.middleMap = new StreamlineGraph();
     self.osp = [];
+    let windModeIndex = 3;
+    let windModes = ['last', 'next','closest', 'interpolate'];
     function loadCSV(filename){
         return new Promise(function(fulfill,reject){
             d3.csv(filename,function(data){
@@ -45,6 +47,38 @@ let Challenge2 = function(){
     function getTimeEntry(time,db, newEntryFn){
         ensureEntryExistence(time, db, newEntryFn);
         return db[time];
+    }
+
+    //from a wind entry, get the wind vector
+    function getWindVector(speed, angle) {
+        function convertMetersPerSecToMilesPerHour(metersPerSec) {
+            // 1m/s= 2.236936mph
+            return metersPerSec * 2.236936;
+        }
+
+        //convert the cardinal angle of the wind data to an angle relative to the x axis
+        function getAngleRelativeToX(degrees) {
+            return 360 - degrees + 90;
+        }
+
+        //based off of https://stackoverflow.com/questions/9705123/how-can-i-get-sin-cos-and-tan-to-use-degrees-instead-of-radians
+        function toRadians(angle) {
+            return angle * (Math.PI / 180);
+        }
+        //based off of https://www.mathsisfun.com/polar-cartesian-coordinates.html
+        function convertPolarToCartesian(magnitude, degrees) {
+            let x = Math.cos(toRadians(degrees)) * magnitude;
+            let y = Math.sin(toRadians(degrees)) * magnitude;
+            return {
+                x: x,
+                y: y
+            };
+        }
+
+        let mph = convertMetersPerSecToMilesPerHour(speed);
+        let vectorAngle = getAngleRelativeToX(angle);
+        let coords = convertPolarToCartesian(mph, vectorAngle);
+        return new Vector(coords.x, coords.y);
     }
 
     function loadData(){
@@ -119,10 +153,15 @@ let Challenge2 = function(){
                         console.log("Possibly erronous wind value", w);
                     }
 
-                    timeEntry.push({
+                    let windEntry = {
                         speed: speed,
-                        direction: parseFloat(w["Wind Direction"])
-                    });
+                        direction: parseFloat(w["Wind Direction"]),
+                    };
+
+                    if(!isNaN(windEntry.speed) && !isNaN(windEntry.direction)){
+                        windEntry.vector = getWindVector(windEntry.speed,windEntry.direction);
+                    }
+                    timeEntry.push(windEntry);
                     if(timeEntry.length !== 1){
                         console.log("Wind Data Error:",w.Date,timeEntry);
                     }
@@ -190,10 +229,121 @@ let Challenge2 = function(){
         }
         self.middleMap.init(options);
     }
+
+
+    function convertDateToTimeStamp(date){
+        return `${date.getMonth()+1}/${date.getDate()}/${date.getFullYear() % 1000} ${date.getHours()}:00`;
+    }
+
+    function getPreviousWindData(timeStamp, options){
+        options = options || {};
+        let curDate = new Date(timeStamp);
+        let data;
+        let attempts = 0, maxAttempts = options.maxAttempts || 6;
+        while (!data && attempts < maxAttempts) {
+            curDate.setHours(curDate.getHours() - 1);
+            console.log("Checking",convertDateToTimeStamp(curDate));
+            if (self.data.wind[convertDateToTimeStamp(curDate)]) {
+                data = self.data.wind[convertDateToTimeStamp(curDate)];
+            } else {
+                attempts++;
+            }
+        }
+        return {
+            data: data,
+            time: curDate
+        };
+    }
+
+    function getNextWindData(timeStamp, options) {
+        options = options || {};
+        let curDate = new Date(timeStamp);
+        let data;
+        let attempts = 0, maxAttempts = options.maxAttempts || 6;
+        while (!data && attempts < maxAttempts) {
+            curDate.setHours(curDate.getHours() + 1);
+            if (self.data.wind[convertDateToTimeStamp(curDate)]) {
+                data = self.data.wind[convertDateToTimeStamp(curDate)];
+                if(isNaN(data[0].speed) || isNaN(data[0].direction)){
+                    data = undefined;
+                }
+            } else {
+                attempts++;
+            }
+        }
+        return {
+            data: data,
+            time: curDate
+        };
+    }
+
+    function getWindDataAtTimeStamp(time){
+        console.log("Requesting wind for",time);
+        if (self.data.wind[time]){
+            return self.data.wind[time];
+        }else{
+            console.log("wind mode is",windModes[windModeIndex]);
+            let attempts = 0, maxAttempts = 6;
+            let data;
+            let curDate = new Date(time);
+            if(windModes[windModeIndex] === 'last'){ //get the previous timeStamp
+                data = getPreviousWindData(curDate).data;
+            } else if (windModes[windModeIndex] === 'next') {
+                data = getNextWindData(curDate).data;
+            } else if (windModes[windModeIndex] === 'closest') { //get the next closest time stamp
+                let prev = getPreviousWindData(time);
+                let next = getNextWindData(time);
+
+                let distFromPrev = curDate - new Date(prev.time);
+                let distFromNext = new Date(next.time) - curDate;
+                if(distFromPrev < distFromNext){
+                    data = prev.data;
+                }else{
+                    data = next.data;
+                }
+            } else if(windModes[windModeIndex] === 'interpolate'){
+                let prev = getPreviousWindData(time);
+                let next = getNextWindData(time);
+
+                //interpolate if both times exist
+                if(prev && next){
+                    let timeRange = new Date(next.time) - new Date(prev.time);
+                    let diff = curDate - new Date(prev.time);
+
+                    let speedScale = d3.scaleLinear()
+                        .domain([0,timeRange])
+                        .range([prev.data[0].speed,next.data[0].speed]);
+
+                    let angleScale = d3.scaleLinear()
+                        .domain([0,timeRange])
+                        .range([prev.data[0].direction,next.data[0].direction]);
+
+                    data = {
+                        speed: speedScale(diff),
+                        direction: angleScale(diff)
+                    };
+
+                    if (!isNaN(data.speed) && !isNaN(data.direction)) {
+                        data.vector = getWindVector(data.speed, data.direction);
+                    }
+                    data = [data]; //convert object into an array
+                }else if(prev){
+                    data = prev.data;
+                }else if(next){
+                    data = next.data;
+                }
+
+            }
+
+            return data;
+        }
+    }
+
     // self.loadMiddleMap = loadMiddleMap;
     function getDataAtTimeStamp(time){
         let chemical = self.data.chemical[time];
-        let wind = self.data.wind[time];
+        let wind = getWindDataAtTimeStamp(time);
+
         return {
             chemical: chemical,
             wind: wind
