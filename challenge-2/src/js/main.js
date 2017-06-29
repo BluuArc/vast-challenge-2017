@@ -306,7 +306,9 @@ let Challenge2 = function(){
                 let next = getNextWindData(time);
 
                 //interpolate if both times exist
-                if(prev && next){
+                if(prev && next && prev.data && next.data){
+                    console.log("prev",prev);
+                    console.log('next',next);
                     let timeRange = new Date(next.time) - new Date(prev.time);
                     let diff = curDate - new Date(prev.time);
 
@@ -327,9 +329,9 @@ let Challenge2 = function(){
                         data.vector = getWindVector(data.speed, data.direction);
                     }
                     data = [data]; //convert object into an array
-                }else if(prev){
+                }else if(prev && prev.data){
                     data = prev.data;
-                }else if(next){
+                }else if(next && next.data){
                     data = next.data;
                 }
 

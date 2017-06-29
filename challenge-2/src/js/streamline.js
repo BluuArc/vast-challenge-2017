@@ -16,9 +16,9 @@ let StreamlineGraph = function () {
 
     //based off of https://bl.ocks.org/pstuffa/26363646c478b2028d36e7274cedefa6
     let line = d3.line()
-        .x(function (d, i) { return scales.xMilesToSVG(d.x); }) // set the x values for the line generator
+        .x(function (d) { console.log(d);return scales.xMilesToSVG(d.x); }) // set the x values for the line generator
         .y(function (d) { return scales.yMilesToSVG(d.y); }) // set the y values for the line generator 
-        .curve(d3.curveMonotoneX); // apply smoothing to the line
+        .curve(d3.curveCatmullRom); // apply smoothing to the line
 
     let sensorLocations = [
         { name: '1', location: [62, 21] },
@@ -40,6 +40,9 @@ let StreamlineGraph = function () {
     ];
     self.init = function (options) {
         factories[0].isSimulating = true;
+        factories[1].isSimulating = true;
+        factories[2].isSimulating = true;
+        factories[3].isSimulating = true;
         scales = options.scales || scales;
         //convert pixel to miles
         scales.miles = d3.scaleLinear()
@@ -180,38 +183,41 @@ let StreamlineGraph = function () {
     }
 
     function drawSimulationPath(vectors, path_id){
-        // let points = [];
-        // for(let v of vectors){
+        let points = [];
+        while(path_id.indexOf(" ") > -1){
+            path_id = path_id.replace(" ","_");
+        }
+        // for(let v = 0; v < vectors.length; ++v){
+        //     let x = scales.xMilesToSVG(vectors[v].x);
+        //     let y = scales.yMilesToSVG(vectors[v].y);
         //     if(points.length === 0){
-        //         points.push(`M${v.x},${v.y}`);
+        //         points.push(`M${x},${y}`);
         //     }else{
-        //         points.push(`L${v.x},${v.y}`);
+        //         points.push(`L${x},${y}`);
         //     }
         // }
+        console.log("Vectors for",path_id,vectors);
 
-        let path = svg.selectAll(`#${path_id}`);
-        if(path.empty()){//initialize path
-            path = path.append('path')
-                .attr('id',`#${path_id}`)
-                .datum(vectors)
-                .classed('chemical-streamline',true)
-                .attr('d',line);
-        }else{
-            path.datum(vectors)
-                .attr('d',line);
-        }
+        svg.selectAll(`#${path_id}`).remove();;
+        svg.append('path')
+            .attr('id',`${path_id}`)
+            .datum(vectors)
+            .classed('chemical-streamline',true)
+            .attr('d', line);
     }
 
     function simulateFactory(f,windData){
+        console.log('windData',windData);
         let points = f.simulationPoints;
         //update all available points
         if(points.length !== 0){
+            console.log("Adding wind vector",windData.vector,"to",points);
             for(let v = 0; v < points.length; ++v){
-                points[v].add(windData.vector);
+                points[v] = points[v].add(windData.vector);
             }
         }
         //add current position again
-        points.push(new Vector(scales.miles(f.location[0]),f.location[1]));
+        points.push(new Vector(scales.miles(f.location[0]),scales.miles(f.location[1])));
 
         drawSimulationPath(points,f.name);
     }
@@ -228,7 +234,7 @@ let StreamlineGraph = function () {
 
         for(let f of factories){
             if(f.isSimulating){
-                simulateFactory(f, windData);
+                simulateFactory(f, windData[0]);
             }
         }
 

@@ -159,3 +159,7 @@ div.tooltip {
 line.wind-glyph.hide {
     opacity: 0;
 }
+
+.chemical-streamline {
+    fill: none;
+}
