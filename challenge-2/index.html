@@ -34,10 +34,12 @@
                     <button id="simStart" onclick="startSimulation()" class="col-sm-3 btn btn-lg btn-primary"> Start Simulation </button>
                     <button id="simEnd" onclick="stopSimulation()" class="col-sm-3 btn btn-lg btn-primary" disabled="true"> Stop Simulation </button>
                     <div class="col-sm-6" style="text-align:center;">
-                        <p>Interpolation Mode:<br></p>
-                        <select id="interpolation-mode">
-
-                        </select>
+                        <div class="dropdown">
+                            <button id="interpolation-mode" class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" value="0">Interpolation Mode
+                        <span class="caret"></span></button>
+                            <ul class="dropdown-menu" id="interpolation-mode-options">
+                            </ul>
+                        </div>
                     </div>
                 </div>  
             </div>
@@ -76,7 +78,8 @@
 
             let interpolation_dropdown = d3.select('#interpolation-mode');
             interpolation_dropdown.attr('disabled', true);
-            challenge2.startSimulation(interpolation_dropdown.node().selectedIndex);
+            console.log("dropdown value",interpolation_dropdown.attr('value'))
+            challenge2.startSimulation(interpolation_dropdown.attr('value'));
             updateMiddleMap();
         }
 

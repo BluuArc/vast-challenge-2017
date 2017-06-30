@@ -13,10 +13,11 @@ let StreamlineGraph = function () {
     let scales = {}, axes = {};
     let sensorGraphs = [];
     let windGlyphs = [];
+    let isSimulating = false;
 
     //based off of https://bl.ocks.org/pstuffa/26363646c478b2028d36e7274cedefa6
     let line = d3.line()
-        .x(function (d) { console.log(d);return scales.xMilesToSVG(d.x); }) // set the x values for the line generator
+        .x(function (d) { return scales.xMilesToSVG(d.x); }) // set the x values for the line generator
         .y(function (d) { return scales.yMilesToSVG(d.y); }) // set the y values for the line generator 
         .curve(d3.curveCatmullRom); // apply smoothing to the line
 
@@ -31,25 +32,28 @@ let StreamlineGraph = function () {
         { name: '8', location: [74, 7] },
         { name: '9', location: [119, 42] },
     ];
+
+    let windVectors = [];
+
     self.svg = svg;
     let factories = [
-        { name: 'Roadrunner Fitness Electronics', location: [89, 27], shape: 'square', isSimulating: false, simulationPoints: [] },
-        { name: 'Kasios Office Furniture', location: [90, 21], shape: '+', isSimulating: false, simulationPoints: [] },
-        { name: 'Radiance ColourTek', location: [109, 26], shape: 'circle', isSimulating: false, simulationPoints: [] },
-        { name: 'Indigo Sol Boards', location: [120, 22], shape: 'x', isSimulating: false, simulationPoints: [] },
+        { name: 'Roadrunner Fitness Electronics', location: [89, 27], shape: 'square'},
+        { name: 'Kasios Office Furniture', location: [90, 21], shape: '+'},
+        { name: 'Radiance ColourTek', location: [109, 26], shape: 'circle'},
+        { name: 'Indigo Sol Boards', location: [120, 22], shape: 'x'},
     ];
 
     self.setSimulationMode = function(bool){
         console.log("Simulation mode",bool);
-        for(let f of factories){
-            f.isSimulating = bool || false;
-            if(!bool){
-                delete f.simulationPoints;
-                f.simulationPoints = [];
-                drawSimulationPath(f.simulationPoints,f.name); //delete the path
-            }else{
-                f.simulationPoints.push(new Vector(scales.miles(f.location[0]), scales.miles(f.location[1])));
-            }
+        isSimulating = bool;
+
+        //reset windVectors array
+        windVectors = [];
+
+        //clear existing paths
+        if(!bool){
+            for(let f of factories)
+                drawSimulationPath([],f.name);
         }
     };
 
@@ -205,7 +209,8 @@ let StreamlineGraph = function () {
             .attr('d', line);
     }
 
-    function simulateFactory(f,windData,direction){
+    //each simulation point is an array of added values to the original location
+    function simulateFactory_old(f,windData,direction){
         console.log('windData',windData);
         let points = f.simulationPoints;
         //update all available points
@@ -229,6 +234,28 @@ let StreamlineGraph = function () {
         drawSimulationPath(points,f.name);
     }
 
+    function simulateFactory(f){
+        let points = [];
+        //generate points from windVector array by adding the windVectors to the current point
+        // use <= to add current factory location to end of array
+        for(let v = 0; v <= windVectors.length; ++v){
+            let curPoint = new Vector(scales.miles(f.location[0]), scales.miles(f.location[1]));
+            // console.log("inital point for",v,curPoint);
+            // let vMax = windVectors.length - v;
+            for(let p = v; p < windVectors.length; ++p){
+                // console.log("adding",windVectors[p])
+                curPoint = curPoint.add(windVectors[p]);
+            }
+            // console.log("final point for", v, curPoint);
+            points.push(curPoint);
+        }
+
+        // console.log("Points for",f.name,points);
+
+        drawSimulationPath(points, f.name);
+        // points.push(new Vector(scales.miles(f.location[0]), scales.miles(f.location[1])));
+    }
+
     //data input is an object with 2 keys: wind and chemical
     //chemical has keys sensor1,sensor2,...,sensor9
     //each sensor object has 4 arrays, each keyed by chemical name
@@ -239,13 +266,18 @@ let StreamlineGraph = function () {
 
         let windData = data.wind;
 
-        for(let f of factories){
-            if(f.isSimulating && difference !== 0){
-                simulateFactory(f, windData[0],difference);
+        if(isSimulating){
+            //add/remove wind vectors as necessary
+            if (difference > 0) {
+                windVectors.push(windData[0].vector);
+            } else if (difference < 0) {
+                windVectors.pop();
             }
+            console.log("windVectors",windVectors);
+            for(let f of factories){
+                simulateFactory(f);
+            }   
         }
-
-
     };
 
 };

@@ -21,10 +21,16 @@ let Challenge2 = function(){
             // loadOSPs();
 
             //populate interpolation dropdown
-            let interpolation_dropdown = d3.select('#interpolation-mode');
-            for(let w of windModes)
-                interpolation_dropdown.append('option')
-                .text(w);
+            d3.select('#interpolation-mode').html(`Interpolation Mode: ${windModes[0]}<span class="caret"></span>`).attr('value',0);
+            let interpolation_dropdown = d3.select('#interpolation-mode-options');
+            for(let w = 0; w < windModes.length; ++w)
+                interpolation_dropdown.append('li').append('a')
+                    .attr('href','#').html(`${windModes[w]}`)
+                    .on('click',function(){
+                        d3.select('#interpolation-mode').attr('value', w).html(`Interpolation Mode: ${windModes[w]}<span class="caret"></span>`);
+                    });
+                // interpolation_dropdown.append('option')
+                // .text(w);
             return;
         });
     }
@@ -382,6 +388,7 @@ let Challenge2 = function(){
 
     self.startSimulation = function(index){
         self.windModeIndex = index;
+        console.log("Interpolation mode", windModes[index]);
         self.middleMap.setSimulationMode(true);
     }
 
