@@ -38,11 +38,23 @@ let StreamlineGraph = function () {
         { name: 'Radiance ColourTek', location: [109, 26], shape: 'circle', isSimulating: false, simulationPoints: [] },
         { name: 'Indigo Sol Boards', location: [120, 22], shape: 'x', isSimulating: false, simulationPoints: [] },
     ];
+
+    self.setSimulationMode = function(bool){
+        console.log("Simulation mode",bool);
+        for(let f of factories){
+            f.isSimulating = bool || false;
+            if(!bool){
+                delete f.simulationPoints;
+                f.simulationPoints = [];
+                drawSimulationPath(f.simulationPoints,f.name); //delete the path
+            }else{
+                f.simulationPoints.push(new Vector(scales.miles(f.location[0]), scales.miles(f.location[1])));
+            }
+        }
+    };
+
     self.init = function (options) {
-        factories[0].isSimulating = true;
-        factories[1].isSimulating = true;
-        factories[2].isSimulating = true;
-        factories[3].isSimulating = true;
+        
         scales = options.scales || scales;
         //convert pixel to miles
         scales.miles = d3.scaleLinear()
@@ -80,10 +92,6 @@ let StreamlineGraph = function () {
         // drawWindGlyphs();
         drawFactories();
         // drawSensors();
-    };
-
-    self.startAnimationFactory = function(x,y){
-
     };
 
     function drawWindGlyphs() {
@@ -187,15 +195,6 @@ let StreamlineGraph = function () {
         while(path_id.indexOf(" ") > -1){
             path_id = path_id.replace(" ","_");
         }
-        // for(let v = 0; v < vectors.length; ++v){
-        //     let x = scales.xMilesToSVG(vectors[v].x);
-        //     let y = scales.yMilesToSVG(vectors[v].y);
-        //     if(points.length === 0){
-        //         points.push(`M${x},${y}`);
-        //     }else{
-        //         points.push(`L${x},${y}`);
-        //     }
-        // }
         console.log("Vectors for",path_id,vectors);
 
         svg.selectAll(`#${path_id}`).remove();;
@@ -206,18 +205,26 @@ let StreamlineGraph = function () {
             .attr('d', line);
     }
 
-    function simulateFactory(f,windData){
+    function simulateFactory(f,windData,direction){
         console.log('windData',windData);
         let points = f.simulationPoints;
         //update all available points
         if(points.length !== 0){
-            console.log("Adding wind vector",windData.vector,"to",points);
+            // console.log("Adding wind vector",windData.vector,"to",points);
             for(let v = 0; v < points.length; ++v){
-                points[v] = points[v].add(windData.vector);
+                if(direction > 0){
+                    points[v] = points[v].add(windData.vector);
+                }else if(direction < 0){
+                    points[v] = points[v].subtract(windData.vector);
+                }
             }
         }
-        //add current position again
+        
+        if (direction < 0) //add current position again
+            points.pop();
         points.push(new Vector(scales.miles(f.location[0]),scales.miles(f.location[1])));
+        // else //remove current position
+            // points.pop();
 
         drawSimulationPath(points,f.name);
     }
@@ -226,15 +233,15 @@ let StreamlineGraph = function () {
     //chemical has keys sensor1,sensor2,...,sensor9
     //each sensor object has 4 arrays, each keyed by chemical name
     //wind is an array where each index object has keys direction and speed
-    self.update = function (data) {
-        console.log("Entered update with", data);
+    self.update = function (data, difference) {
+        console.log("Entered update with", data,difference);
         // updateSensors(data.chemical);
 
         let windData = data.wind;
 
         for(let f of factories){
-            if(f.isSimulating){
-                simulateFactory(f, windData[0]);
+            if(f.isSimulating && difference !== 0){
+                simulateFactory(f, windData[0],difference);
             }
         }
 

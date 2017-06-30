@@ -19,7 +19,29 @@
 
 <body>
     <div class="tooltip"></div>
-    <div class="container">
+    <div class="container-fluid">
+        
+        <div class="row">
+            <div class="col-sm-6 main-column" id="overview">
+                overview
+            </div>
+            <div class="col-sm-6 main-column" id="kiviat-map">
+                <div class="row" style="border: 1px solid gray;">
+                    <div class="svg-container" id="graph">
+                    </div>
+                </div>
+                <div class="row" id="simulation-controls">
+                    <button id="simStart" onclick="startSimulation()" class="col-sm-3 btn btn-lg btn-primary"> Start Simulation </button>
+                    <button id="simEnd" onclick="stopSimulation()" class="col-sm-3 btn btn-lg btn-primary" disabled="true"> Stop Simulation </button>
+                    <div class="col-sm-6" style="text-align:center;">
+                        <p>Interpolation Mode:<br></p>
+                        <select id="interpolation-mode">
+
+                        </select>
+                    </div>
+                </div>  
+            </div>
+        </div>
         <div class="row">
             <input id="timestamp-slider" type="range" value="0" style="max-width: 90%;margin-left:5%;"/>
             <p id="current-time-stamp" style="text-align:center;">slider</p>
@@ -28,23 +50,17 @@
                 <button onclick="changeTime(1)">Step Forward</button>
             </div>
         </div>
-        <div class="row">
-            <div class="col-sm-6 main-column" id="overview">
-                overview
-            </div>
-            <div class="col-sm-6 main-column" id="kiviat-map">
-                <div class="svg-container" id="graph">
-                </div>
-            </div>
-        </div>
     </div>
     <script>
         // let g = new Graph();
 		// g.init();
         let timestamps,timestamp_slider;
+        let old_val;
         function updateMiddleMap(){
-            challenge2.updateMiddleMap(timestamps[timestamp_slider.node().value]);
+            let cur_val = timestamp_slider.node().value;
+            challenge2.updateMiddleMap(timestamps[timestamp_slider.node().value], cur_val-old_val);
             d3.select('#current-time-stamp').text(timestamps[timestamp_slider.node().value])
+            old_val = cur_val;
         }
 
         function changeTime(amount){
@@ -52,6 +68,29 @@
             timestamp_slider.node().value = +(timestamp_slider.node().value) + +amount;
             updateMiddleMap();
         }
+
+        function startSimulation(){
+            d3.select('#simStart').attr('disabled',true);
+            d3.select('#simEnd').attr('disabled',null);
+            timestamp_slider.attr('disabled',true);
+
+            let interpolation_dropdown = d3.select('#interpolation-mode');
+            interpolation_dropdown.attr('disabled', true);
+            challenge2.startSimulation(interpolation_dropdown.node().selectedIndex);
+            updateMiddleMap();
+        }
+
+        function stopSimulation(){
+            d3.select('#simStart').attr('disabled',null);
+            d3.select('#simEnd').attr('disabled',true);
+            timestamp_slider.attr('disabled',null);
+
+            let interpolation_dropdown = d3.select('#interpolation-mode');
+            interpolation_dropdown.attr('disabled', null);
+            challenge2.stopSimulation();
+            updateMiddleMap();
+        }
+
         let challenge2 = new Challenge2();
         challenge2.init().then(function(){
             timestamps = challenge2.getChemicalTimeStamps();
@@ -59,6 +98,7 @@
             timestamp_slider.attr('max',timestamps.length-1);
             timestamp_slider.on('input',updateMiddleMap);
             updateMiddleMap(); //set middlmap to show data for first timestamp
+            old_val = timestamp_slider.node().value;
         }); 
     </script>
 </body>

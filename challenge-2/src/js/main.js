@@ -4,7 +4,7 @@ let Challenge2 = function(){
     self.data = {};
     self.middleMap = new StreamlineGraph();
     self.osp = [];
-    let windModeIndex = 3;
+    self.windModeIndex = 3;
     let windModes = ['last', 'next','closest', 'interpolate'];
     function loadCSV(filename){
         return new Promise(function(fulfill,reject){
@@ -20,6 +20,11 @@ let Challenge2 = function(){
             loadMiddleMap();
             // loadOSPs();
 
+            //populate interpolation dropdown
+            let interpolation_dropdown = d3.select('#interpolation-mode');
+            for(let w of windModes)
+                interpolation_dropdown.append('option')
+                .text(w);
             return;
         });
     }
@@ -282,15 +287,15 @@ let Challenge2 = function(){
         if (self.data.wind[time]){
             return self.data.wind[time];
         }else{
-            console.log("wind mode is",windModes[windModeIndex]);
+            console.log("wind mode is",windModes[self.windModeIndex]);
             let attempts = 0, maxAttempts = 6;
             let data;
             let curDate = new Date(time);
-            if(windModes[windModeIndex] === 'last'){ //get the previous timeStamp
+            if(windModes[self.windModeIndex] === 'last'){ //get the previous timeStamp
                 data = getPreviousWindData(curDate).data;
-            } else if (windModes[windModeIndex] === 'next') {
+            } else if (windModes[self.windModeIndex] === 'next') {
                 data = getNextWindData(curDate).data;
-            } else if (windModes[windModeIndex] === 'closest') { //get the next closest time stamp
+            } else if (windModes[self.windModeIndex] === 'closest') { //get the next closest time stamp
                 let prev = getPreviousWindData(time);
                 let next = getNextWindData(time);
 
@@ -301,7 +306,7 @@ let Challenge2 = function(){
                 }else{
                     data = next.data;
                 }
-            } else if(windModes[windModeIndex] === 'interpolate'){
+            } else if(windModes[self.windModeIndex] === 'interpolate'){
                 let prev = getPreviousWindData(time);
                 let next = getNextWindData(time);
 
@@ -352,11 +357,11 @@ let Challenge2 = function(){
         };
     }
 
-    function updateMiddleMap(sensorObject){
+    function updateMiddleMap(sensorObject, difference){
         if(typeof sensorObject === "string"){
             sensorObject = getDataAtTimeStamp(sensorObject);
         }
-        self.middleMap.update(sensorObject);
+        self.middleMap.update(sensorObject,difference);
     }
     self.updateMiddleMap = updateMiddleMap;
 
@@ -373,5 +378,14 @@ let Challenge2 = function(){
         let osp = new OverviewScatterPlot(d3.select('#osp-container-1'),1);
         osp.init();
         console.log("Loaded OSPs");
+    }
+
+    self.startSimulation = function(index){
+        self.windModeIndex = index;
+        self.middleMap.setSimulationMode(true);
+    }
+
+    self.stopSimulation = function(){
+        self.middleMap.setSimulationMode(false);
     }
 };

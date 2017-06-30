@@ -1,4 +1,4 @@
-.container {
+.container-fluid {
     width: 100%;
 }
 
@@ -10,6 +10,9 @@
     padding-bottom: 90%;
     vertical-align: middle;
     overflow: hidden;
+    /*align-content: center;*/
+    margin: auto;
+    /*border: 1px solid gray;*/
 }
 
 .svg-content {
@@ -17,7 +20,6 @@
     position: absolute;
     top: 0;
     left: 0;
-    border: 1px solid gray;
 }
 
 svg {
@@ -163,3 +165,7 @@ line.wind-glyph.hide {
 .chemical-streamline {
     fill: none;
 }
+
+/*button:disabled {
+    color: lightgray;
+}*/
