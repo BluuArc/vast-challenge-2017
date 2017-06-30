@@ -9,7 +9,7 @@ let Challenge2 = function(){
     function loadCSV(filename){
         return new Promise(function(fulfill,reject){
             d3.csv(filename,function(data){
-                console.log(data);
+                // console.log(data);
                 fulfill(data);
             });
         });
@@ -49,17 +49,6 @@ let Challenge2 = function(){
         return sensors;
     }
 
-    function ensureEntryExistence(date,db, newEntryFn){
-        if(!db[date]){
-            db[date] = newEntryFn();
-        }
-    }
-
-    function getTimeEntry(time,db, newEntryFn){
-        ensureEntryExistence(time, db, newEntryFn);
-        return db[time];
-    }
-
     //from a wind entry, get the wind vector
     function getWindVector(speed, angle) {
         function convertMetersPerSecToMilesPerHour(metersPerSec) {
@@ -90,6 +79,19 @@ let Challenge2 = function(){
         let vectorAngle = getAngleRelativeToX(angle);
         let coords = convertPolarToCartesian(mph, vectorAngle);
         return new Vector(coords.x, coords.y);
+    }
+
+    //populate the db object with date entries by the given hour_step
+    function generateMonthEntries(db,month_num, year_num,hour_step,newEntryFn){
+        let curDate = new Date(`${month_num}/1/${year_num} 0:00`);
+        while(curDate.getMonth()+1 === month_num){
+            if(typeof newEntryFn === "function"){
+                db[convertDateToTimeStamp(curDate)] = newEntryFn();
+            }else{
+                db[convertDateToTimeStamp(curDate)] = { empty: true };
+            }
+            curDate.setHours(curDate.getHours()+(hour_step || 1));
+        }
     }
 
     function loadData(){
@@ -138,6 +140,7 @@ let Challenge2 = function(){
                 //key objects by timestamp (<db_variable>[time_stamp] = <data>)
                 let wind = {};
                 let ignored_count = 0;
+                let curMonth, curYear;
                 for(let w of data.wind){
                     if (w.Date.length === 0 && w["Wind Speed (m/s)"].length === 0 && w["Wind Direction"].length === 0){
                         ignored_count++;
@@ -148,10 +151,16 @@ let Challenge2 = function(){
                         console.log("Wind entry may be invalid",w);
                     }
 
-                    // let curTime = new Date(w.Date);
-                    let timeEntry = getTimeEntry(w.Date, wind, function(){
-                        return [];
-                    });
+                    curDate = new Date(w.Date);
+
+                    if(!wind[`${curDate.getMonth()+1}/1/${curDate.getFullYear()%1000} 0:00`]){
+                        // console.log("Generating entries for",curDate);
+                        generateMonthEntries(wind,curDate.getMonth()+1,curDate.getFullYear()%1000,3,() => {return [];});
+                    }
+                    let timeEntry = wind[w.Date];
+                    if(!timeEntry){
+                        console.log("Error: Time entry",curDate,"doesn't exist");
+                    }
 
 
                     let statEntry = statistics.wind;
@@ -173,17 +182,37 @@ let Challenge2 = function(){
                         windEntry.vector = getWindVector(windEntry.speed,windEntry.direction);
                     }
                     timeEntry.push(windEntry);
-                    if(timeEntry.length !== 1){
-                        console.log("Wind Data Error:",w.Date,timeEntry);
-                    }
                 }
                 console.log("Ignored",ignored_count,"empty wind entries");
+                let wind_error = [];
+                for(let w in wind){
+                    if(wind[w].length !== 1){
+                        wind_error.push({
+                            time: w,
+                            data: wind[w],
+                            length: wind[w].length
+                        });
+                    }
+                }
+                if(wind_error.length > 0){
+                    console.log("Potentially erronous wind entries",wind_error);
+                }
 
                 let chemical = {};
                 let erroneous = [];
                 for(let c of data.chemical){
-                    // let curTime = new Date(c["Date Time "]);
-                    let timeEntry = getTimeEntry(c["Date Time "],chemical, createSensors);
+
+                    curDate = new Date(c["Date Time "]);
+
+                    if (!chemical[`${curDate.getMonth() + 1}/1/${curDate.getFullYear() % 1000} 0:00`]) {
+                        // console.log("Generating chemical entries for", curDate);
+                        generateMonthEntries(chemical, curDate.getMonth() + 1, curDate.getFullYear() % 1000, 1, createSensors);
+                        // console.log(chemical);
+                    }
+                    let timeEntry = chemical[c["Date Time "]];
+                    if (!timeEntry) {
+                        console.log("Error: Time entry", curDate, "doesn't exist");
+                    }
 
                     //update statistic info
                     let statEntry = statistics.chemical[c.Chemical];
@@ -197,13 +226,29 @@ let Challenge2 = function(){
                     }
 
                     timeEntry[`sensor${c.Monitor}`][c.Chemical].push(value);
-                    if(timeEntry[`sensor${c.Monitor}`][c.Chemical].length !== 1)
-                        erroneous.push({
-                            msg: `Chemical Data Error: More than 1 entry exists. ${c["Data Time "]}, sensor${c.Monitor}, ${c.Chemical}`, 
-                            data: timeEntry[`sensor${c.Monitor}`][c.Chemical]
-                        });
                 }
-                console.log("Potentially Erroneous Chemical Data:\n",erroneous);
+                (function(chemical_db,erroneous_acc){
+                    let chemical_names = ['Appluimonia', 'Chlorodinine', 'Methylosmolene', 'AGOC-3A'];
+                    for(let c in chemical_db){
+                        let sensors = chemical_db[c];
+                        for (let i = 1; i <= 9; ++i) {
+                            let curSensor = sensors[`sensor${i}`];
+                            for (let cn of chemical_names) {
+                                if(curSensor[cn].length !== 1){
+                                    erroneous_acc.push({
+                                        time: c,
+                                        sensor: i,
+                                        chemica: cn,
+                                        data: curSensor[cn],
+                                        length: curSensor[cn].length
+                                    });
+                                }
+                            }
+                        }
+                    }
+                })(chemical,erroneous);
+                if(erroneous.length > 0)
+                    console.log("Potentially Erroneous Chemical Data:\n",erroneous);
 
 
                 self.data = {
@@ -256,6 +301,9 @@ let Challenge2 = function(){
             console.log("Checking",convertDateToTimeStamp(curDate));
             if (self.data.wind[convertDateToTimeStamp(curDate)]) {
                 data = self.data.wind[convertDateToTimeStamp(curDate)];
+                if (!data[0] || isNaN(data[0].speed) || isNaN(data[0].direction)) {
+                    data = undefined;
+                }
             } else {
                 attempts++;
             }
@@ -275,7 +323,7 @@ let Challenge2 = function(){
             curDate.setHours(curDate.getHours() + 1);
             if (self.data.wind[convertDateToTimeStamp(curDate)]) {
                 data = self.data.wind[convertDateToTimeStamp(curDate)];
-                if(isNaN(data[0].speed) || isNaN(data[0].direction)){
+                if(!data[0] || isNaN(data[0].speed) || isNaN(data[0].direction)){
                     data = undefined;
                 }
             } else {
@@ -317,9 +365,9 @@ let Challenge2 = function(){
                 let next = getNextWindData(time);
 
                 //interpolate if both times exist
-                if(prev && next && prev.data && next.data){
-                    console.log("prev",prev);
-                    console.log('next',next);
+                if (prev && prev.data && prev.data[0] && next && next.data && next.data[0] ){
+                    // console.log("prev",prev);
+                    // console.log('next',next);
                     let timeRange = new Date(next.time) - new Date(prev.time);
                     let diff = curDate - new Date(prev.time);
 
