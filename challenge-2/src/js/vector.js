@@ -69,5 +69,11 @@ Vector.prototype = {
     init: function (x, y, z) {
         this.x = x; this.y = y; this.z = z;
         return this;
+    },
+    rotateXY: function(angleDeg){
+        ang = -ang * (Math.PI / 180);
+        var cos = Math.cos(ang);
+        var sin = Math.sin(ang);
+        return new Vector(Math.round(10000 * (this.x * cos - this.y * sin)) / 10000, Math.round(10000 * (this.x * sin + this.y * cos)) / 10000,this.z);
     }
 };

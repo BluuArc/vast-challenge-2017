@@ -42,33 +42,69 @@
                         </div>
                     </div>
                 </div>  
+                <div class="row" style="text-align:center">
+                    <div class="col-sm-4">Using wind data from:</div>
+                    <div class="col-sm-8" id="wind-indicator">---</div>
+                </div>
             </div>
         </div>
         <div class="row">
             <input id="timestamp-slider" type="range" value="0" style="max-width: 90%;margin-left:5%;"/>
             <p id="current-time-stamp" style="text-align:center;">slider</p>
             <div id="step-buttons" style="text-align:center">
-                <button onclick="changeTime(-1)">Step Back</button>
-                <button onclick="changeTime(1)">Step Forward</button>
+                <button onclick="changeTime(-1)" class="btn btn-primary"><span class="glyphicon glyphicon-chevron-left"></button>
+                <input id="time-step-size" type="number" min="0" max="48" value="1" style="max-width:5%; min-width: 10px; text-align:center;">
+                <button onclick="changeTime(1)" class="btn btn-primary"><span class="glyphicon glyphicon-chevron-right"></span></button>
             </div>
         </div>
     </div>
     <script>
-        // let g = new Graph();
-		// g.init();
         let timestamps,timestamp_slider;
         let old_val;
+        let start_index;
+        let options = {
+            verbose: false
+        };
+
         function updateMiddleMap(){
             let cur_val = timestamp_slider.node().value;
-            challenge2.updateMiddleMap(timestamps[timestamp_slider.node().value], cur_val-old_val);
-            d3.select('#current-time-stamp').text(timestamps[timestamp_slider.node().value])
+            old_val = (+old_val) || 0;
+            let diff = (cur_val || 0) - (+old_val || 0);
+            if(diff < 0){
+                diff *= -1;
+                for(let d = 0; d < diff; ++d){
+                    challenge2.updateMiddleMap(timestamps[old_val+d], -1);
+                }
+            }else if(diff !== 0){
+                for(let d = 0; d < diff; ++d){
+                    challenge2.updateMiddleMap(timestamps[old_val+d], 1);
+                }
+            }else{
+                challenge2.updateMiddleMap(timestamps[timestamp_slider.node().value], diff);
+            }
+            d3.select('#current-time-stamp').text(timestamps[timestamp_slider.node().value]);
             old_val = cur_val;
         }
 
         function changeTime(amount){
-            console.log(timestamp_slider.node().value,amount);
-            timestamp_slider.node().value = +(timestamp_slider.node().value) + +amount;
-            updateMiddleMap();
+            let value = +(d3.select('#time-step-size').node().value) 
+            let diff = value*amount;
+            let curValue = +(timestamp_slider.node().value);
+            console.log("start:",start_index,"new val:",curValue+diff,"step size:",diff,"raw step value",value);
+            let dist_to_start = (start_index) ? (curValue - start_index) : 0;
+            //ensure positive step size
+            if(value < 1 || value > 48){
+                alert("Please enter a positive number no larger than 48");
+                d3.select('#time-step-size').node().value = 1;
+                return;
+            }
+            //go up to the start index
+            if(start_index !== undefined && start_index > curValue+diff){
+                diff = -(dist_to_start);
+            }
+            console.log(curValue,amount,value);
+            timestamp_slider.node().value = curValue + diff;
+            updateMiddleMap(value);
         }
 
         function startSimulation(){
@@ -76,10 +112,12 @@
             d3.select('#simEnd').attr('disabled',null);
             timestamp_slider.attr('disabled',true);
 
+            start_index = +(timestamp_slider.node().value);
+
             let interpolation_dropdown = d3.select('#interpolation-mode');
             interpolation_dropdown.attr('disabled', true);
             console.log("dropdown value",interpolation_dropdown.attr('value'))
-            challenge2.startSimulation(interpolation_dropdown.attr('value'));
+            challenge2.startSimulation(interpolation_dropdown.attr('value'),timestamps[timestamp_slider.node().value]);
             updateMiddleMap();
         }
 
@@ -88,13 +126,15 @@
             d3.select('#simEnd').attr('disabled',true);
             timestamp_slider.attr('disabled',null);
 
+            start_index = undefined;
+
             let interpolation_dropdown = d3.select('#interpolation-mode');
             interpolation_dropdown.attr('disabled', null);
             challenge2.stopSimulation();
             updateMiddleMap();
         }
 
-        let challenge2 = new Challenge2();
+        let challenge2 = new Challenge2(options);
         challenge2.init().then(function(){
             timestamps = challenge2.getChemicalTimeStamps();
             timestamp_slider = d3.select('#timestamp-slider');

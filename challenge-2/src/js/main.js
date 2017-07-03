@@ -1,15 +1,18 @@
 
-let Challenge2 = function(){
+let Challenge2 = function(options){
+    options = options || {};
     let self = this;
     self.data = {};
-    self.middleMap = new StreamlineGraph();
+    self.middleMap = new StreamlineGraph(options);
     self.osp = [];
-    self.windModeIndex = 3;
+    self.windModeIndex = 0;
+    let verbose = options.verbose || false;
+    let isSimulating = false;
     let windModes = ['last', 'next','closest', 'interpolate'];
     function loadCSV(filename){
         return new Promise(function(fulfill,reject){
             d3.csv(filename,function(data){
-                // console.log(data);
+                // if(verbose) console.log(data);
                 fulfill(data);
             });
         });
@@ -44,6 +47,19 @@ let Challenge2 = function(){
             let curSensor = sensors[`sensor${i}`];
             for(let c of chemical_names){
                 curSensor[c] = [];
+            }
+        }
+        return sensors;
+    }
+
+    function createEmptyDelta(){
+        let sensors = {};
+        let chemical_names = ['Appluimonia', 'Chlorodinine', 'Methylosmolene', 'AGOC-3A'];
+        for (let i = 1; i <= 9; ++i) {
+            sensors[`sensor${i}`] = {};
+            let curSensor = sensors[`sensor${i}`];
+            for (let c of chemical_names) {
+                curSensor[c] = NaN;
             }
         }
         return sensors;
@@ -127,6 +143,11 @@ let Challenge2 = function(){
                 min: Infinity,
                 max: -Infinity,
                 amount: 0
+            },
+            delta: {
+                min: Infinity,
+                max: -Infinity,
+                amount: 0
             }
         }
         return Promise.all([windLoad,chemicalLoad])
@@ -148,18 +169,18 @@ let Challenge2 = function(){
                     }
 
                     if (w.Date.length === 0 || w["Wind Speed (m/s)"].length === 0 || w["Wind Direction"].length === 0){
-                        console.log("Wind entry may be invalid",w);
+                        if(verbose) console.log("Wind entry may be invalid",w);
                     }
 
                     curDate = new Date(w.Date);
 
                     if(!wind[`${curDate.getMonth()+1}/1/${curDate.getFullYear()%1000} 0:00`]){
-                        // console.log("Generating entries for",curDate);
+                        // if(verbose) console.log("Generating entries for",curDate);
                         generateMonthEntries(wind,curDate.getMonth()+1,curDate.getFullYear()%1000,3,() => {return [];});
                     }
                     let timeEntry = wind[w.Date];
                     if(!timeEntry){
-                        console.log("Error: Time entry",curDate,"doesn't exist");
+                        if(verbose) console.log("Error: Time entry",curDate,"doesn't exist");
                     }
 
 
@@ -170,7 +191,7 @@ let Challenge2 = function(){
                         statEntry.min = (speed < statEntry.min) ? speed : statEntry.min;
                         statEntry.amount++;
                     }else{
-                        console.log("Possibly erronous wind value", w);
+                        if(verbose) console.log("Possibly erronous wind value", w);
                     }
 
                     let windEntry = {
@@ -183,7 +204,7 @@ let Challenge2 = function(){
                     }
                     timeEntry.push(windEntry);
                 }
-                console.log("Ignored",ignored_count,"empty wind entries");
+                if(verbose) console.log("Ignored",ignored_count,"empty wind entries");
                 let wind_error = [];
                 for(let w in wind){
                     if(wind[w].length !== 1){
@@ -195,24 +216,30 @@ let Challenge2 = function(){
                     }
                 }
                 if(wind_error.length > 0){
-                    console.log("Potentially erronous wind entries",wind_error);
+                    if(verbose) console.log("Potentially erronous wind entries",wind_error);
                 }
 
                 let chemical = {};
+                let delta = {};
                 let erroneous = [];
+                let prevTimeEntry;
                 for(let c of data.chemical){
 
                     curDate = new Date(c["Date Time "]);
 
                     if (!chemical[`${curDate.getMonth() + 1}/1/${curDate.getFullYear() % 1000} 0:00`]) {
-                        // console.log("Generating chemical entries for", curDate);
+                        // if(verbose) console.log("Generating chemical entries for", curDate);
                         generateMonthEntries(chemical, curDate.getMonth() + 1, curDate.getFullYear() % 1000, 1, createSensors);
-                        // console.log(chemical);
+                        generateMonthEntries(delta, curDate.getMonth() + 1, curDate.getFullYear() % 1000, 1, createEmptyDelta);
+                        // if(verbose) console.log(chemical);
                     }
                     let timeEntry = chemical[c["Date Time "]];
+                    let deltaEntry = delta[c["Date Time "]];
                     if (!timeEntry) {
-                        console.log("Error: Time entry", curDate, "doesn't exist");
+                        if(verbose) console.log("Error: Time entry", curDate, "doesn't exist");
                     }
+
+                    
 
                     //update statistic info
                     let statEntry = statistics.chemical[c.Chemical];
@@ -222,11 +249,31 @@ let Challenge2 = function(){
                         statEntry.min = (value < statEntry.min) ? value : statEntry.min;
                         statEntry.amount++;
                     }else{
-                        console.log("Possibly erroneous chemical value", c);
+                        if(verbose) console.log("Possibly erroneous chemical value", c);
                     }
 
                     timeEntry[`sensor${c.Monitor}`][c.Chemical].push(value);
                 }
+
+                //generate delta entries
+                for(let c in chemical){
+                    let curDate = new Date(c);
+                    if (!delta[`${curDate.getMonth() + 1}/1/${curDate.getFullYear() % 1000} 0:00`]) {
+                        // if(verbose) console.log("Generating delta entries for", curDate);
+                        generateMonthEntries(delta, curDate.getMonth() + 1, curDate.getFullYear() % 1000, 1, createEmptyDelta);
+                        // if(verbose) console.log(chemical);
+                    }
+
+                    let timeEntry = delta[c];
+                    if(!timeEntry){
+                        if (verbose) console.log("Error: Time entry", curDate, "doesn't exist");
+                    }
+
+                    calculateDelta(prevTimeEntry,chemical[c],timeEntry);
+
+                    prevTimeEntry = chemical[c];
+                }
+
                 (function(chemical_db,erroneous_acc){
                     let chemical_names = ['Appluimonia', 'Chlorodinine', 'Methylosmolene', 'AGOC-3A'];
                     for(let c in chemical_db){
@@ -248,12 +295,13 @@ let Challenge2 = function(){
                     }
                 })(chemical,erroneous);
                 if(erroneous.length > 0)
-                    console.log("Potentially Erroneous Chemical Data:\n",erroneous);
+                    if(verbose) console.log("Potentially Erroneous Chemical Data:\n",erroneous);
 
 
                 self.data = {
                     wind: wind,
-                    chemical: chemical
+                    chemical: chemical,
+                    delta: delta
                 };
 
                 //create linear scales for each statistic
@@ -266,8 +314,8 @@ let Challenge2 = function(){
 
                 self.data.wind._statistics = statistics.wind;
                 self.data.chemical._statistics = statistics.chemical;
-                console.log("Done loading data. Number of erronous chemical entries",count);
-                // console.log(min,max);
+                if(verbose) console.log("Done loading data. Number of erronous chemical entries",count);
+                // if(verbose) console.log(min,max);
                 return;
             });
     }
@@ -286,7 +334,6 @@ let Challenge2 = function(){
         self.middleMap.init(options);
     }
 
-
     function convertDateToTimeStamp(date){
         return `${date.getMonth()+1}/${date.getDate()}/${date.getFullYear() % 1000} ${date.getHours()}:00`;
     }
@@ -298,7 +345,7 @@ let Challenge2 = function(){
         let attempts = 0, maxAttempts = options.maxAttempts || 6;
         while (!data && attempts < maxAttempts) {
             curDate.setHours(curDate.getHours() - 1);
-            console.log("Checking",convertDateToTimeStamp(curDate));
+            if(verbose) console.log("Checking",convertDateToTimeStamp(curDate));
             if (self.data.wind[convertDateToTimeStamp(curDate)]) {
                 data = self.data.wind[convertDateToTimeStamp(curDate)];
                 if (!data[0] || isNaN(data[0].speed) || isNaN(data[0].direction)) {
@@ -337,18 +384,24 @@ let Challenge2 = function(){
     }
 
     function getWindDataAtTimeStamp(time){
-        console.log("Requesting wind for",time);
-        if (self.data.wind[time]){
+        if(verbose) console.log("Requesting wind for",time);
+        let wind_indicator = d3.select('#wind-indicator');
+        if (self.data.wind[time] && self.data.wind[time].length > 0){
+            if(isSimulating) wind_indicator.text(convertDateToTimeStamp(new Date(time)));
             return self.data.wind[time];
         }else{
-            console.log("wind mode is",windModes[self.windModeIndex]);
+            if(verbose) console.log("No valid entry directly at",time);
+            if(verbose) console.log("wind mode is",windModes[self.windModeIndex]);
             let attempts = 0, maxAttempts = 6;
             let data;
             let curDate = new Date(time);
+            let result;
             if(windModes[self.windModeIndex] === 'last'){ //get the previous timeStamp
-                data = getPreviousWindData(curDate).data;
+                result = getPreviousWindData(curDate);
+                data = result.data;
             } else if (windModes[self.windModeIndex] === 'next') {
-                data = getNextWindData(curDate).data;
+                result = getNextWindData(curDate);
+                data = result.data;
             } else if (windModes[self.windModeIndex] === 'closest') { //get the next closest time stamp
                 let prev = getPreviousWindData(time);
                 let next = getNextWindData(time);
@@ -357,8 +410,10 @@ let Challenge2 = function(){
                 let distFromNext = new Date(next.time) - curDate;
                 if(distFromPrev < distFromNext){
                     data = prev.data;
+                    result = prev;
                 }else{
                     data = next.data;
+                    result = next;
                 }
             } else if(windModes[self.windModeIndex] === 'interpolate'){
                 let prev = getPreviousWindData(time);
@@ -366,8 +421,8 @@ let Challenge2 = function(){
 
                 //interpolate if both times exist
                 if (prev && prev.data && prev.data[0] && next && next.data && next.data[0] ){
-                    // console.log("prev",prev);
-                    // console.log('next',next);
+                    // if(verbose) console.log("prev",prev);
+                    // if(verbose) console.log('next',next);
                     let timeRange = new Date(next.time) - new Date(prev.time);
                     let diff = curDate - new Date(prev.time);
 
@@ -388,15 +443,49 @@ let Challenge2 = function(){
                         data.vector = getWindVector(data.speed, data.direction);
                     }
                     data = [data]; //convert object into an array
+
+
+                    wind_indicator.text(`${convertDateToTimeStamp(prev.time)} and ${convertDateToTimeStamp(next.time)}`);
+                    result = {};
                 }else if(prev && prev.data){
                     data = prev.data;
+                    result = prev;
                 }else if(next && next.data){
                     data = next.data;
+                    result = next;
                 }
 
             }
 
+            if(isSimulating && result){
+                if(verbose) console.log("Result",result);
+                if(result.time){
+                    wind_indicator.text(`${ convertDateToTimeStamp(result.time) || "Error"}`);
+                }
+            }
+
             return data;
+        }
+    }
+
+    function calculateDelta(prev,current,delta_obj){
+        let chemical_names = ['Appluimonia', 'Chlorodinine', 'Methylosmolene', 'AGOC-3A'];
+        for (let i = 1; i <= 9; ++i) {
+            let prevSensor;
+            if(prev !== undefined) prevSensor = prev[`sensor${i}`];
+            let curSensor = current[`sensor${i}`];
+            for (let c of chemical_names) {
+                if(!prevSensor){
+                    if(verbose) console.log("Getting 0");
+                    delta_obj[`sensor${i}`][c] = 0;
+                } else if (prevSensor[c].length === 1 && curSensor[c].length === 1){
+                    delta_obj[`sensor${i}`][c] = +curSensor[c][0] - prevSensor[c][0];
+                    if(verbose){
+                         console.log("Calculating diffs");
+                        console.log("prev:", prev, "current:", current, "delta", delta_obj);
+                    }
+                }
+            }
         }
     }
 
@@ -431,16 +520,20 @@ let Challenge2 = function(){
     function loadOSPs(){
         let osp = new OverviewScatterPlot(d3.select('#osp-container-1'),1);
         osp.init();
-        console.log("Loaded OSPs");
+        if(verbose) console.log("Loaded OSPs");
     }
 
-    self.startSimulation = function(index){
+    self.startSimulation = function(index, time_stamp){
         self.windModeIndex = index;
-        console.log("Interpolation mode", windModes[index]);
+        isSimulating = true;
+        getWindDataAtTimeStamp(time_stamp);
+        if(verbose) console.log("Interpolation mode", windModes[index]);
         self.middleMap.setSimulationMode(true);
     }
 
     self.stopSimulation = function(){
+        isSimulating = false;
+        d3.select('#wind-indicator').text("---");
         self.middleMap.setSimulationMode(false);
     }
 };

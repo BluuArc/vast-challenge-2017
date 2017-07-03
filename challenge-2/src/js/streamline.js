@@ -2,7 +2,8 @@
 
 var tooltip = tooltip || new Tooltip();
 
-let StreamlineGraph = function () {
+let StreamlineGraph = function (options) {
+    options = options || {};
     let self = this;
     let w = 300, h = 300;
     let kiviatSize = 25;
@@ -14,6 +15,7 @@ let StreamlineGraph = function () {
     let sensorGraphs = [];
     let windGlyphs = [];
     let isSimulating = false;
+    let verbose = options.verbose || false;
 
     //based off of https://bl.ocks.org/pstuffa/26363646c478b2028d36e7274cedefa6
     let line = d3.line()
@@ -33,7 +35,8 @@ let StreamlineGraph = function () {
         { name: '9', location: [119, 42] },
     ];
 
-    let windVectors = [];
+    let windVectors = []; //array of wind vectors to add at each index/timestamp
+    let diffusionVectors = []; //complement to the windVectors to calculate diffusion path
 
     self.svg = svg;
     let factories = [
@@ -44,7 +47,7 @@ let StreamlineGraph = function () {
     ];
 
     self.setSimulationMode = function(bool){
-        console.log("Simulation mode",bool);
+        if(verbose) console.log("Simulation mode",bool);
         isSimulating = bool;
 
         //reset windVectors array
@@ -80,7 +83,7 @@ let StreamlineGraph = function () {
 
         // scales.kiviatSize = {}
         // kiviatSize = d3.min([scales.xPixelToSVG(50), scales.yPixelToSVG(20)])/2;
-        // console.log(kiviatSize);
+        // if(verbose) console.log(kiviatSize);
         axes.x = d3.axisBottom(scales.xMilesToSVG);
         svg.append('g')
             .attr('class', 'axis')
@@ -97,39 +100,6 @@ let StreamlineGraph = function () {
         drawFactories();
         // drawSensors();
     };
-
-    function drawWindGlyphs() {
-        //based off of https://codepen.io/zxhfighter/pen/wWKqqX 
-        svg.append('defs').append('marker')
-            .attr('id', 'arrow')
-            .attr('viewBox', '0 0 12 12')
-            .attr('refX', '6')
-            .attr('refY', '6')
-            .attr('markerWidth', '12')
-            .attr('markerHeight', '12')
-            .attr('orient', 'auto');
-        svg.select('#arrow').append('path')
-            .attr('d', 'M2,2 L10,6 L2,10 L6,6 L2,2')
-            .classed('wind-glyph', true);
-
-        for (let i = 1; i < 4; ++i) {
-            for (let j = 1; j < 4; ++j) {
-                let defaultTransform = `translate(${w * 0.25 * i},${h * 0.25 * j}) scale(2)`;
-                let curGlpyh = svg.append("line")
-                    .attr("x1", 0)
-                    .attr("y1", 1)
-                    .attr("x2", 0)
-                    .attr("y2", 0)
-                    .attr("marker-end", "url(#arrow)")
-                    .attr('transform', defaultTransform)
-                    .classed('wind-glyph', true);
-                windGlyphs.push({
-                    glyph: curGlpyh,
-                    transformation: defaultTransform
-                });
-            }
-        }
-    }
 
     //should only be called once
     function drawFactories() {
@@ -161,7 +131,7 @@ let StreamlineGraph = function () {
     }
 
     function drawSensors() {
-        console.log("scales before draw sensors", scales);
+        if(verbose) console.log("scales before draw sensors", scales);
         let sensors = svg.selectAll('.sensor').data(sensorLocations);
         sensors.exit().remove(); //remove excess
 
@@ -184,14 +154,23 @@ let StreamlineGraph = function () {
         for (let sensor in readings) {
             let sensorIndex = +(sensor.split('sensor')[1]) - 1;
             if (isNaN(sensorIndex)) { //not a sensor object
-                console.log(sensor, "is not a sensor field; skipping");
+                if(verbose) console.log(sensor, "is not a sensor field; skipping");
                 continue;
             } else {
-                // console.log("updating sensor",sensorIndex+1,"with",readings[sensor]);
+                // if(verbose) console.log("updating sensor",sensorIndex+1,"with",readings[sensor]);
             }
             let curGraph = sensorGraphs[sensorIndex];
             curGraph.update(readings[sensor]);
         }
+    }
+
+    //input is the same input as drawSimulationPath
+    function drawDiffusionPath(vectors){
+        //calculate diffusion path
+        let end = vectors.length - 1;
+        let ccwPoints
+
+        //draw diffusion path
     }
 
     function drawSimulationPath(vectors, path_id){
@@ -199,7 +178,7 @@ let StreamlineGraph = function () {
         while(path_id.indexOf(" ") > -1){
             path_id = path_id.replace(" ","_");
         }
-        console.log("Vectors for",path_id,vectors);
+        if(verbose) console.log("Vectors for",path_id,vectors);
 
         svg.selectAll(`#${path_id}`).remove();;
         svg.append('path')
@@ -211,11 +190,11 @@ let StreamlineGraph = function () {
 
     //each simulation point is an array of added values to the original location
     function simulateFactory_old(f,windData,direction){
-        console.log('windData',windData);
+        if(verbose) console.log('windData',windData);
         let points = f.simulationPoints;
         //update all available points
         if(points.length !== 0){
-            // console.log("Adding wind vector",windData.vector,"to",points);
+            // if(verbose) console.log("Adding wind vector",windData.vector,"to",points);
             for(let v = 0; v < points.length; ++v){
                 if(direction > 0){
                     points[v] = points[v].add(windData.vector);
@@ -234,23 +213,32 @@ let StreamlineGraph = function () {
         drawSimulationPath(points,f.name);
     }
 
+    //calculate the CCW diffusion unit vector from vectors a and b
+    function calculateDiffusionVector(a,b){
+
+    }
+
     function simulateFactory(f){
         let points = [];
         //generate points from windVector array by adding the windVectors to the current point
         // use <= to add current factory location to end of array
         for(let v = 0; v <= windVectors.length; ++v){
             let curPoint = new Vector(scales.miles(f.location[0]), scales.miles(f.location[1]));
-            // console.log("inital point for",v,curPoint);
+            // if(verbose) console.log("inital point for",v,curPoint);
             // let vMax = windVectors.length - v;
             for(let p = v; p < windVectors.length; ++p){
-                // console.log("adding",windVectors[p])
+                // if(verbose) console.log("adding",windVectors[p])
                 curPoint = curPoint.add(windVectors[p]);
             }
-            // console.log("final point for", v, curPoint);
+            // if(verbose) console.log("final point for", v, curPoint);
             points.push(curPoint);
         }
+        if(points.length > 2){
+            let end = points.length - 1;
+            // calculateDiffusionVector(points[end],points[end-1]);
+        }
 
-        // console.log("Points for",f.name,points);
+        // if(verbose) console.log("Points for",f.name,points);
 
         drawSimulationPath(points, f.name);
         // points.push(new Vector(scales.miles(f.location[0]), scales.miles(f.location[1])));
@@ -261,7 +249,7 @@ let StreamlineGraph = function () {
     //each sensor object has 4 arrays, each keyed by chemical name
     //wind is an array where each index object has keys direction and speed
     self.update = function (data, difference) {
-        console.log("Entered update with", data,difference);
+        if(verbose) console.log("Entered update with", data,difference);
         // updateSensors(data.chemical);
 
         let windData = data.wind;
@@ -273,7 +261,7 @@ let StreamlineGraph = function () {
             } else if (difference < 0) {
                 windVectors.pop();
             }
-            console.log("windVectors",windVectors);
+            if(verbose) console.log("windVectors",windVectors);
             for(let f of factories){
                 simulateFactory(f);
             }   
