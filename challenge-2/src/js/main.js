@@ -145,9 +145,26 @@ let Challenge2 = function(options){
                 amount: 0
             },
             delta: {
-                min: Infinity,
-                max: -Infinity,
-                amount: 0
+                Appluimonia: {
+                    min: Infinity,
+                    max: -Infinity,
+                    amount: 0
+                },
+                Chlorodinine: {
+                    min: Infinity,
+                    max: -Infinity,
+                    amount: 0
+                },
+                Methylosmolene: {
+                    min: Infinity,
+                    max: -Infinity,
+                    amount: 0
+                },
+                'AGOC-3A': {
+                    min: Infinity,
+                    max: -Infinity,
+                    amount: 0
+                }
             }
         }
         return Promise.all([windLoad,chemicalLoad])
@@ -269,7 +286,8 @@ let Challenge2 = function(options){
                         if (verbose) console.log("Error: Time entry", curDate, "doesn't exist");
                     }
 
-                    calculateDelta(prevTimeEntry,chemical[c],timeEntry);
+                    calculateDelta(prevTimeEntry,chemical[c],timeEntry, statistics.delta);
+
 
                     prevTimeEntry = chemical[c];
                 }
@@ -310,10 +328,16 @@ let Challenge2 = function(options){
                     curStat.scale = d3.scaleLinear().domain([(curStat.min < 0) ? curStat.min : 0, curStat.max]);
                 }
 
+                for(let chem in statistics.delta){
+                    let curStat = statistics.delta[chem];
+                    curStat.scale = d3.scaleLinear().domain([(curStat.min < 0) ? curStat.min : 0, curStat.max]);
+                }
+
                 statistics.wind.scale = d3.scaleLinear().domain([statistics.wind.max,statistics.wind.max]);
 
                 self.data.wind._statistics = statistics.wind;
                 self.data.chemical._statistics = statistics.chemical;
+                self.data.delta._statistics = statistics.delta;
                 if(verbose) console.log("Done loading data. Number of erronous chemical entries",count);
                 // if(verbose) console.log(min,max);
                 return;
@@ -468,7 +492,7 @@ let Challenge2 = function(options){
         }
     }
 
-    function calculateDelta(prev,current,delta_obj){
+    function calculateDelta(prev,current,delta_obj, statistics){
         let chemical_names = ['Appluimonia', 'Chlorodinine', 'Methylosmolene', 'AGOC-3A'];
         for (let i = 1; i <= 9; ++i) {
             let prevSensor;
@@ -479,10 +503,21 @@ let Challenge2 = function(options){
                     if(verbose) console.log("Getting 0");
                     delta_obj[`sensor${i}`][c] = 0;
                 } else if (prevSensor[c].length === 1 && curSensor[c].length === 1){
-                    delta_obj[`sensor${i}`][c] = +curSensor[c][0] - prevSensor[c][0];
+                    let diff = (+curSensor[c][0]) - (+prevSensor[c][0])
+                    delta_obj[`sensor${i}`][c] = diff;
                     if(verbose){
                          console.log("Calculating diffs");
                         console.log("prev:", prev, "current:", current, "delta", delta_obj);
+                    }
+
+                    //update statistic info
+                    let statEntry = statistics[c];
+                    if (!isNaN(diff)) {
+                        statEntry.max = (diff > statEntry.max) ? diff : statEntry.max;
+                        statEntry.min = (diff < statEntry.min) ? diff : statEntry.min;
+                        statEntry.amount++;
+                    } else {
+                        if (verbose) console.log("Possibly erroneous delta value");
                     }
                 }
             }
