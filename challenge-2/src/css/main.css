@@ -166,6 +166,11 @@ line.wind-glyph.hide {
     fill: none;
 }
 
+.chemical-streamline-diffusion {
+    fill: none;
+    color: red;
+}
+
 /*button:disabled {
     color: lightgray;
 }*/

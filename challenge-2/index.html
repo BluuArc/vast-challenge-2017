@@ -63,27 +63,39 @@
         let old_val;
         let start_index;
         let options = {
-            verbose: false
+            verbose: true
         };
 
         function updateMiddleMap(){
             let cur_val = timestamp_slider.node().value;
             old_val = (+old_val) || 0;
-            let diff = (cur_val || 0) - (+old_val || 0);
-            if(diff < 0){
-                diff *= -1;
-                for(let d = 0; d < diff; ++d){
-                    challenge2.updateMiddleMap(timestamps[old_val+d], -1);
+            let diff = (+cur_val || 0) - (+old_val || 0);
+            let msg;
+            try{
+                if(diff < 0){
+                    diff *= -1;
+                    for(let d = 0; d < diff; ++d){
+                        challenge2.updateMiddleMap(timestamps[old_val-d], -1);
+                    }
+                }else if(diff > 0){
+                    for(let d = 0; d < diff; ++d){
+                        challenge2.updateMiddleMap(timestamps[old_val+d], 1);
+                    }
+                }else{
+                    challenge2.updateMiddleMap(timestamps[timestamp_slider.node().value], diff);
                 }
-            }else if(diff !== 0){
-                for(let d = 0; d < diff; ++d){
-                    challenge2.updateMiddleMap(timestamps[old_val+d], 1);
-                }
-            }else{
-                challenge2.updateMiddleMap(timestamps[timestamp_slider.node().value], diff);
+                challenge2.updateMiddleMap(timestamps[timestamp_slider.node().value], 0,true);
+            }catch(err){
+                console.log(err);
+                msg = err;
             }
-            d3.select('#current-time-stamp').text(timestamps[timestamp_slider.node().value]);
             old_val = cur_val;
+            if(!msg){
+                d3.select('#current-time-stamp').text(timestamps[timestamp_slider.node().value]);
+            }else{
+                d3.select('#current-time-stamp').text("No data found for " + timestamps[timestamp_slider.node().value]);
+            }
+            // challenge2.render();
         }
 
         function changeTime(amount){
@@ -93,7 +105,7 @@
             console.log("start:",start_index,"new val:",curValue+diff,"step size:",diff,"raw step value",value);
             let dist_to_start = (start_index) ? (curValue - start_index) : 0;
             //ensure positive step size
-            if(value < 1 || value > 48){
+            if(value < 1 /*|| value > 48*/ || (curValue+diff) >= timestamps.length ){
                 alert("Please enter a positive number no larger than 48");
                 d3.select('#time-step-size').node().value = 1;
                 return;
@@ -142,6 +154,7 @@
             timestamp_slider.on('input',updateMiddleMap);
             updateMiddleMap(); //set middlmap to show data for first timestamp
             old_val = timestamp_slider.node().value;
+            console.log("Ready");
         }); 
     </script>
 </body>

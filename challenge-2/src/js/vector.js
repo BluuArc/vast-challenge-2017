@@ -70,10 +70,17 @@ Vector.prototype = {
         this.x = x; this.y = y; this.z = z;
         return this;
     },
-    rotateXY: function(angleDeg){
-        ang = -ang * (Math.PI / 180);
-        var cos = Math.cos(ang);
-        var sin = Math.sin(ang);
-        return new Vector(Math.round(10000 * (this.x * cos - this.y * sin)) / 10000, Math.round(10000 * (this.x * sin + this.y * cos)) / 10000,this.z);
+    //based on https://stackoverflow.com/questions/28112315/how-do-i-rotate-a-vector
+    rotateXY: function (angleDeg) {
+        let cos, sin;
+        if (angleDeg !== 90) {
+            angleDeg = -angleDeg * (Math.PI / 180);
+            cos = Math.cos(angleDeg);
+            sin = Math.sin(angleDeg);
+        } else {
+            cos = 0;
+            sin = 1;
+        }
+        return new Vector(Math.round(10000 * (this.x * cos - this.y * sin)) / 10000, Math.round(10000 * (this.x * sin + this.y * cos)) / 10000, this.z);
     }
 };

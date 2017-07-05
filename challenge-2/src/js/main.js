@@ -407,11 +407,16 @@ let Challenge2 = function(options){
         };
     }
 
+    function updateWindIndicator(msg){
+        let wind_indicator = d3.select('#wind-indicator');
+        wind_indicator.text(msg);
+    }
+
     function getWindDataAtTimeStamp(time){
         if(verbose) console.log("Requesting wind for",time);
-        let wind_indicator = d3.select('#wind-indicator');
+        
         if (self.data.wind[time] && self.data.wind[time].length > 0){
-            if(isSimulating) wind_indicator.text(convertDateToTimeStamp(new Date(time)));
+            if(isSimulating) updateWindIndicator(convertDateToTimeStamp(new Date(time)));
             return self.data.wind[time];
         }else{
             if(verbose) console.log("No valid entry directly at",time);
@@ -469,7 +474,7 @@ let Challenge2 = function(options){
                     data = [data]; //convert object into an array
 
 
-                    wind_indicator.text(`${convertDateToTimeStamp(prev.time)} and ${convertDateToTimeStamp(next.time)}`);
+                    updateWindIndicator(`${convertDateToTimeStamp(prev.time)} and ${convertDateToTimeStamp(next.time)}`);
                     result = {};
                 }else if(prev && prev.data){
                     data = prev.data;
@@ -484,7 +489,7 @@ let Challenge2 = function(options){
             if(isSimulating && result){
                 if(verbose) console.log("Result",result);
                 if(result.time){
-                    wind_indicator.text(`${ convertDateToTimeStamp(result.time) || "Error"}`);
+                    updateWindIndicator(`${ convertDateToTimeStamp(result.time) || "Error"}`);
                 }
             }
 
@@ -506,8 +511,8 @@ let Challenge2 = function(options){
                     let diff = (+curSensor[c][0]) - (+prevSensor[c][0])
                     delta_obj[`sensor${i}`][c] = diff;
                     if(verbose){
-                         console.log("Calculating diffs");
-                        console.log("prev:", prev, "current:", current, "delta", delta_obj);
+                        // console.log("Calculating diffs");
+                        // console.log("prev:", prev, "current:", current, "delta", delta_obj);
                     }
 
                     //update statistic info
@@ -535,11 +540,18 @@ let Challenge2 = function(options){
         };
     }
 
-    function updateMiddleMap(sensorObject, difference){
+    function updateMiddleMap(sensorObject, difference,render){
+        //don't calculate if not simulating
+        if(!isSimulating){
+            return;
+        }
+        console.log("Received request for",sensorObject);
         if(typeof sensorObject === "string"){
+            time = sensorObject;
             sensorObject = getDataAtTimeStamp(sensorObject);
         }
-        self.middleMap.update(sensorObject,difference);
+        
+        self.middleMap.update(sensorObject,difference,render);
     }
     self.updateMiddleMap = updateMiddleMap;
 

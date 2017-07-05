@@ -3,6 +3,7 @@
 var tooltip = tooltip || new Tooltip();
 
 let StreamlineGraph = function (options) {
+    console.log("received options:",options)
     options = options || {};
     let self = this;
     let w = 300, h = 300;
@@ -16,6 +17,7 @@ let StreamlineGraph = function (options) {
     let windGlyphs = [];
     let isSimulating = false;
     let verbose = options.verbose || false;
+    let diffusion_rate = 0.05;
 
     //based off of https://bl.ocks.org/pstuffa/26363646c478b2028d36e7274cedefa6
     let line = d3.line()
@@ -36,15 +38,32 @@ let StreamlineGraph = function (options) {
     ];
 
     let windVectors = []; //array of wind vectors to add at each index/timestamp
-    let diffusionVectors = []; //complement to the windVectors to calculate diffusion path
+    // let diffusionVectors = []; //complement to the windVectors to calculate diffusion path
 
     self.svg = svg;
     let factories = [
-        { name: 'Roadrunner Fitness Electronics', location: [89, 27], shape: 'square'},
-        { name: 'Kasios Office Furniture', location: [90, 21], shape: '+'},
-        { name: 'Radiance ColourTek', location: [109, 26], shape: 'circle'},
-        { name: 'Indigo Sol Boards', location: [120, 22], shape: 'x'},
+        { name: 'Roadrunner Fitness Electronics', location: [89, 27], shape: 'square', diffusionVectors: []},
+        { name: 'Kasios Office Furniture', location: [90, 21], shape: '+', diffusionVectors: []},
+        { name: 'Radiance ColourTek', location: [109, 26], shape: 'circle', diffusionVectors: []},
+        { name: 'Indigo Sol Boards', location: [120, 22], shape: 'x', diffusionVectors: []},
     ];
+
+    function updateWindIndicator(msg) {
+        let wind_indicator = d3.select('#wind-indicator');
+        wind_indicator.text(msg);
+    }
+
+    function plotPointAt(x, y) {
+        if (x instanceof Vector) {
+            y = x.y;
+            x = x.x;
+        }
+        console.log(x,y);
+        return svg.append('circle')
+            .attr('r', 5)
+            .attr('cx', scales.xMilesToSVG(x))
+            .attr('cy', scales.yMilesToSVG(y));
+    }
 
     self.setSimulationMode = function(bool){
         if(verbose) console.log("Simulation mode",bool);
@@ -55,8 +74,16 @@ let StreamlineGraph = function (options) {
 
         //clear existing paths
         if(!bool){
-            for(let f of factories)
+            for(let f of factories){
+                f.diffusionVectors = [];
                 drawSimulationPath([],f.name);
+                drawDiffusionPath([],[],f.name);
+            }
+        }else{
+            // for(let f of factories){
+            //     calculateFactoryDiffusionVectors(f);
+            // }
+            calculateFactoryDiffusionVectors(factories[0]);
         }
     };
 
@@ -164,83 +191,210 @@ let StreamlineGraph = function (options) {
         }
     }
 
-    //input is the same input as drawSimulationPath
-    function drawDiffusionPath(vectors){
-        //calculate diffusion path
-        let end = vectors.length - 1;
-        let ccwPoints
+    //calculate the CCW diffusion unit vector from points a, b, and c
+    //a is the newest timestamp, and c is the oldest time stamp
+    /* Visual representation of points a,b, and c
+            c <-- b
+                / ^
+               /  |
+             \/_  |
+          bisect  a
 
-        //draw diffusion path
+    */
+    function calculateDiffusionVector(a, b, c) {
+        let vectorA, vectorB, unitBisect, doRotate = false;
+        console.log("Received", a, b, c);
+        if (!b) {
+            throw Error("Point B is required");
+        } else if (!a && !c) {
+            throw Error("Point A or C is required");
+        } else {
+            if (!a) { //at beginning of path
+                console.log("bc");
+                vectorB = c.subtract(b); //b -> c
+                vectorA = vectorB.multiply(1); //a -> b; extended endpoint
+                doRotate = true;
+            } else if (!c) { //at end of path
+                console.log("ab");
+                vectorA = b.subtract(a); //a -> b
+                vectorB = vectorA.multiply(1); //b -> c; extended endpoint
+                doRotate = true;
+            } else { //at middle of path
+                console.log("abc");
+                vectorA = b.subtract(a); //a -> b
+                vectorB = c.subtract(b); //b -> c
+            }
+        }
+
+        if (doRotate) {
+            unitBisect = vectorA.unit().rotateXY(90);
+        } else {
+            let unitB = vectorB.unit();
+            let reverseA = vectorA.multiply(-1);
+            let unitReverseA = reverseA.unit();
+
+            // show red reference points
+            // let multiplier = 20;
+            // plotPointAt(b.add(unitB.multiply(multiplier))).attr('fill','red');
+            // plotPointAt(b.add(unitReverseA.multiply(multiplier))).attr('fill','red');
+
+            let fullBisect = unitB.add(unitReverseA);
+            unitBisect = fullBisect.unit(); //this is what get's saved
+        }
+
+        //keeping one or the other doesn't matter as long as we're consistently picking one side
+        let cross = vectorA.cross(unitBisect);
+        if (cross.z > 0) {
+            return unitBisect;
+        } else {
+            return unitBisect.multiply(-1);
+        }
+    }
+
+    function drawDiffusionPath(points, diffusionVectors, path_id) {
+        while (path_id.indexOf(" ") > -1) {
+            path_id = path_id.replace(" ", "_");
+        }
+        svg.selectAll(`#${path_id}-diffusion`).remove();
+        if(diffusionVectors.length === 0){
+            return;
+        }
+        let path_points = [];
+        console.log("Diffusion:", diffusionVectors, "points:", points);
+        let end = diffusionVectors.length - 1;
+        let multiplier = diffusion_rate * -2;
+        //draw half of the path
+        for (let f = 0; f < diffusionVectors.length; ++f) {
+            path_points.push(points[f].add(diffusionVectors[f].multiply(-multiplier * f)));
+        }
+
+        //add middle point
+        let radius = diffusion_rate * end;
+        let endPoint = ((a, b, c) => {
+            //excerpt from calculateDiffusionVector
+            let vectorA = b.subtract(a); //a -> b
+            let vectorB = vectorA.multiply(-1);
+            return vectorA.unit();
+        })(points[end - 1], points[end]);
+        endPoint = points[end].add(endPoint.multiply(-multiplier * end));
+        path_points.push(endPoint);
+
+        for (let f = end; f >= 0; --f) {
+            path_points.push(points[f].add(diffusionVectors[f].multiply(multiplier * f)));
+        }
+
+        //draw path points
+        // for (let p of path_points) {
+        //     plotPointAt(p).attr('r', 5).attr('id', `${path_id}-diffusion`).attr('fill','red');
+        // }
+
+        // svg.append('path')
+        //     // .attr('id',`${path_id}`)
+        //     .datum(path_points)
+        //     .attr('stroke', 'red')
+        //     .attr('fill', 'none')
+        //     // .classed('chemical-streamline',true)
+        //     // .attr('d', (d) => { return d; });
+        //     .attr('d', line)
+
+        svg.append('path')
+            .attr('id', `${path_id}-diffusion`)
+            .datum(path_points)
+            .classed('chemical-streamline', true)
+            .attr('d', line)
+            .attr('style','stroke:red;');
+    }
+
+    //input is the same input as drawSimulationPath
+    function drawDiffusionPath_old(vectors,diffusionVectors,path_id){
+        while (path_id.indexOf(" ") > -1) {
+            path_id = path_id.replace(" ", "_");
+        }
+        if (verbose) console.log("Diffusion vectors for", path_id, diffusionVectors);
+        svg.selectAll(`#${path_id}-diffusion`).remove();
+        svg.append('path')
+            .attr('id', `${path_id}-diffusion`)
+            .datum(diffusionVectors)
+            .classed('chemical-streamline', true)
+            .attr('d', line);
     }
 
     function drawSimulationPath(vectors, path_id){
-        let points = [];
         while(path_id.indexOf(" ") > -1){
             path_id = path_id.replace(" ","_");
         }
         if(verbose) console.log("Vectors for",path_id,vectors);
-
+        let diffusion_path = [];
         svg.selectAll(`#${path_id}`).remove();;
         svg.append('path')
             .attr('id',`${path_id}`)
             .datum(vectors)
             .classed('chemical-streamline',true)
-            .attr('d', line);
-    }
-
-    //each simulation point is an array of added values to the original location
-    function simulateFactory_old(f,windData,direction){
-        if(verbose) console.log('windData',windData);
-        let points = f.simulationPoints;
-        //update all available points
-        if(points.length !== 0){
-            // if(verbose) console.log("Adding wind vector",windData.vector,"to",points);
-            for(let v = 0; v < points.length; ++v){
-                if(direction > 0){
-                    points[v] = points[v].add(windData.vector);
-                }else if(direction < 0){
-                    points[v] = points[v].subtract(windData.vector);
+            .each((data) => {
+                for(let p = 0; p < data.length; ++p){
+                    // plotPointAt(data[p]).attr('id', `${path_id}`).attr('r',5);
+                    diffusion_path.unshift(calculateDiffusionVector(data[p-1],data[p],data[p+1]));
                 }
-            }
+            })
+            .attr('d', line)
+        if (path_id === 'Roadrunner_Fitness_Electronics')
+            drawDiffusionPath(vectors.reverse(),diffusion_path.reverse(),path_id);
+    }
+
+    function calculateFactoryDiffusionVectors(factory){
+        if(windVectors.length === 0){
+            return;
         }
-        
-        if (direction < 0) //add current position again
-            points.pop();
-        points.push(new Vector(scales.miles(f.location[0]),scales.miles(f.location[1])));
-        // else //remove current position
-            // points.pop();
-
-        drawSimulationPath(points,f.name);
-    }
-
-    //calculate the CCW diffusion unit vector from vectors a and b
-    function calculateDiffusionVector(a,b){
-
-    }
-
-    function simulateFactory(f){
         let points = [];
+        let startLocation = [scales.miles(factory.location[0]), scales.miles(factory.location[1])];
         //generate points from windVector array by adding the windVectors to the current point
         // use <= to add current factory location to end of array
-        for(let v = 0; v <= windVectors.length; ++v){
-            let curPoint = new Vector(scales.miles(f.location[0]), scales.miles(f.location[1]));
+        for (let v = 0; v <= windVectors.length; ++v) {
+            let curPoint = new Vector(startLocation[0], startLocation[1]);
             // if(verbose) console.log("inital point for",v,curPoint);
             // let vMax = windVectors.length - v;
-            for(let p = v; p < windVectors.length; ++p){
+            for (let p = v; p < windVectors.length; ++p) {
                 // if(verbose) console.log("adding",windVectors[p])
                 curPoint = curPoint.add(windVectors[p]);
             }
             // if(verbose) console.log("final point for", v, curPoint);
             points.push(curPoint);
         }
-        if(points.length > 2){
-            let end = points.length - 1;
-            // calculateDiffusionVector(points[end],points[end-1]);
+
+        let diffusionVectors = factory.diffusionVectors;
+        let p;
+        //calculate diffusion vectors as necessary
+        for(p = 0; p < points.length; ++p){
+            if(!diffusionVectors[p]){
+                diffusionVectors[p] = calculateDiffusionVector(points[p-1], points[p],points[p+1]);
+            }
         }
+        //remove any excess
+        while(p <= diffusionVectors.length){
+            diffusionVectors.pop();
+        }
+        console.log("After calculations",diffusionVectors);
+    }
 
-        // if(verbose) console.log("Points for",f.name,points);
-
-        drawSimulationPath(points, f.name);
+    function drawFactoryPaths(factory){
+        let points = [],p;
+        let startLocation = [scales.miles(factory.location[0]), scales.miles(factory.location[1])];
+        //generate points from windVector array by adding the windVectors to the current point
+        //use <= to add current factory location to end of array
+        for(let v = 0; v <= windVectors.length; ++v){
+            let curPoint = new Vector(startLocation[0], startLocation[1]);
+            // if(verbose) console.log("inital point for",v,curPoint);
+            // let vMax = windVectors.length - v;
+            for(p = v; p < windVectors.length; ++p){
+                // if(verbose) console.log("adding",windVectors[p])
+                curPoint = curPoint.add(windVectors[p]);
+            }
+            // if(verbose) console.log("final point for", v, curPoint);
+            points.push(curPoint);
+        }
+        
+        drawSimulationPath(points, factory.name);
+        // drawDiffusionPath(points,factory.diffusionVectors,factory.name);
         // points.push(new Vector(scales.miles(f.location[0]), scales.miles(f.location[1])));
     }
 
@@ -248,23 +402,40 @@ let StreamlineGraph = function (options) {
     //chemical has keys sensor1,sensor2,...,sensor9
     //each sensor object has 4 arrays, each keyed by chemical name
     //wind is an array where each index object has keys direction and speed
-    self.update = function (data, difference) {
-        if(verbose) console.log("Entered update with", data,difference);
+    self.update = function (data, difference,render) {
+        if(verbose) console.log("Entered update with", data,difference,render);
         // updateSensors(data.chemical);
+
+        if(!data.wind){
+            if(isSimulating && render){
+                updateWindIndicator("No wind data found for current time stamp");
+            }
+            return;
+        }
 
         let windData = data.wind;
 
         if(isSimulating){
-            //add/remove wind vectors as necessary
-            if (difference > 0) {
-                windVectors.push(windData[0].vector);
-            } else if (difference < 0) {
-                windVectors.pop();
+            //calculate vectors as necessary
+            if(difference !== 0){
+                if (difference > 0) {
+                    windVectors.push(windData[0].vector);
+                } else if (difference < 0) {
+                    windVectors.pop();
+                }
+
+                // for(let f of factories){
+                //     calculateFactoryDiffusionVectors(f);
+                // }
+                calculateFactoryDiffusionVectors(factories[0]);
             }
-            if(verbose) console.log("windVectors",windVectors);
-            for(let f of factories){
-                simulateFactory(f);
-            }   
+
+            // if(verbose) console.log("windVectors",windVectors);
+            if(render){
+                for(let f of factories){
+                    drawFactoryPaths(f);
+                }   
+            }
         }
     };
 
