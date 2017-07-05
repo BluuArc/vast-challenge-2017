@@ -32,10 +32,39 @@ path, line {
 
 .sensor {
     fill: red;
+    opacity: 0.25;
 }
 
 .factory {
-    fill: black;
+    opacity: 0.75;
+}
+
+.factory:hover, .sensor:hover {
+    opacity: 1;
+}
+
+.Roadrunner-Fitness-Electronics{
+    fill: #1b9e77;
+    stroke: #1b9e77;
+    color: #1b9e77;
+}
+
+.Kasios-Office-Furniture{
+    fill: #d95f02;
+    stroke: #d95f02;    
+    color: #d95f02;
+}
+
+.Radiance-ColourTek{
+    fill: #7570b3;
+    stroke: #7570b3;    
+    color: #7570b3;
+}
+
+.Indigo-Sol-Boards{
+    fill: #f1b6da;
+    stroke: #f1b6da;    
+    color: #f1b6da;
 }
 
 .point {
@@ -55,18 +84,26 @@ path, line {
 }
 
 .Appluimonia {
-    color: #1b9e77;
+    fill: #ca0020;
+    stroke: #ca0020;
+    color: #ca0020;
 }
 
 .Chlorodinine {
-    color: #d95f02;
+    fill: #0571b0;
+    stroke: #0571b0;
+    color: #0571b0;
 }
 
 .Methylosmolene {
-    color: #7570b3;
+    fill: #a6611a;
+    stroke: #a6611a;
+    color: #a6611a;
 }
 
 .AGOC-3A {
+    fill: #e7298a;
+    stroke: #e7298a;
     color: #e7298a;
 }
 

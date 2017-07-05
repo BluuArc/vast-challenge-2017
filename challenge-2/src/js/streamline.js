@@ -3,29 +3,25 @@
 var tooltip = tooltip || new Tooltip();
 
 let StreamlineGraph = function (options) {
-    console.log("received options:",options)
+    console.log("received options:", options);
     options = options || {};
     let self = this;
-    let w = 300, h = 300;
-    let kiviatSize = 25;
+    let w = 400, h = 400;
     let padding = 25;
-    let svg = d3.select('#graph').append('svg').classed('svg-content', true)//.attr('width','100%').attr('height','100%')
-        .attr('viewBox', `0 0 ${w} ${h}`).attr('preserveAspectRatio', `xMinYMin meet`);
-    // .attr('style', `max-height:100%`);
-    let scales = {}, axes = {};
-    let sensorGraphs = [];
+    let glyphSize = 45; //size of things on the map
+    let svg = d3.select('#streamline-graph').append('svg').classed('svg-content', true)
+        .attr('viewBox', `0 0 ${w} ${h}`).attr('preserveAspectRatio', `xMinYMin meet`).attr('style','border:1px red');
+    let scales = {};
     let windGlyphs = [];
     let isSimulating = false;
-    let verbose = options.verbose || false;
-    let diffusion_rate = 0.05;
+    let windVectors = [], timeStamps = [];
+    let diffusion_rate = 1;
 
-    //based off of https://bl.ocks.org/pstuffa/26363646c478b2028d36e7274cedefa6
     let line = d3.line()
-        .x(function (d) { return scales.xMilesToSVG(d.x); }) // set the x values for the line generator
-        .y(function (d) { return scales.yMilesToSVG(d.y); }) // set the y values for the line generator 
-        .curve(d3.curveCatmullRom); // apply smoothing to the line
+        .x((d) => { return d.x; }).y((d) => {return d.y; })
+        .curve(d3.curveCatmullRom);
 
-    let sensorLocations = [
+    let sensors = [
         { name: '1', location: [62, 21] },
         { name: '2', location: [66, 35] },
         { name: '3', location: [76, 41] },
@@ -37,159 +33,223 @@ let StreamlineGraph = function (options) {
         { name: '9', location: [119, 42] },
     ];
 
-    let windVectors = []; //array of wind vectors to add at each index/timestamp
-    // let diffusionVectors = []; //complement to the windVectors to calculate diffusion path
-
-    self.svg = svg;
     let factories = [
-        { name: 'Roadrunner Fitness Electronics', location: [89, 27], shape: 'square', diffusionVectors: []},
-        { name: 'Kasios Office Furniture', location: [90, 21], shape: '+', diffusionVectors: []},
-        { name: 'Radiance ColourTek', location: [109, 26], shape: 'circle', diffusionVectors: []},
-        { name: 'Indigo Sol Boards', location: [120, 22], shape: 'x', diffusionVectors: []},
+        { name: 'Roadrunner Fitness Electronics', id: 'Roadrunner-Fitness-Electronics', location: [89, 27], shape: 'square', },
+        { name: 'Kasios Office Furniture', id: 'Kasios-Office-Furniture', location: [90, 21], shape: '+', },
+        { name: 'Radiance ColourTek', id: 'Radiance-ColourTek', location: [109, 26], shape: 'circle', },
+        { name: 'Indigo Sol Boards', id: 'Indigo-Sol-Boards', location: [120, 22], shape: 'x', },
     ];
 
-    function updateWindIndicator(msg) {
-        let wind_indicator = d3.select('#wind-indicator');
-        wind_indicator.text(msg);
-    }
-
-    function plotPointAt(x, y) {
+    function drawPointAt(x,y){
         if (x instanceof Vector) {
             y = x.y;
             x = x.x;
         }
-        console.log(x,y);
+
         return svg.append('circle')
             .attr('r', 5)
-            .attr('cx', scales.xMilesToSVG(x))
-            .attr('cy', scales.yMilesToSVG(y));
+            .attr('cx', x)
+            .attr('cy', y);
     }
 
-    self.setSimulationMode = function(bool){
-        if(verbose) console.log("Simulation mode",bool);
-        isSimulating = bool;
-
-        //reset windVectors array
-        windVectors = [];
-
-        //clear existing paths
-        if(!bool){
-            for(let f of factories){
-                f.diffusionVectors = [];
-                drawSimulationPath([],f.name);
-                drawDiffusionPath([],[],f.name);
-            }
+    //empty message removes events
+    function setTooltipEvents(target,message){
+        if(!message || message.length === 0){
+            target.on('mouseenter', undefined)
+                .on('mouseleave', undefined);
         }else{
-            // for(let f of factories){
-            //     calculateFactoryDiffusionVectors(f);
-            // }
-            calculateFactoryDiffusionVectors(factories[0]);
+            target.on('mouseenter', function () {
+                tooltip.setContent(message);
+                tooltip.showAt(d3.event.pageX, d3.event.pageY);
+            }).on('mouseleave', function () {
+                tooltip.hide();
+            });
         }
-    };
+    }
 
-    self.init = function (options) {
-        
+    //pixel refers to original 200x200 coordinates or zoomed in coordinates while SVG refers to SVG coordinates
+    self.init = function(options){
         scales = options.scales || scales;
-        //convert pixel to miles
-        scales.miles = d3.scaleLinear()
-            .domain([0, 200])
-            .range([0, 12]);
 
-        //convert miles to svg pixel
-        scales.xMilesToSVG = d3.scaleLinear().domain([scales.miles(50), scales.miles(125)])
-            .range([padding, w - padding * 2]);//add padding to not go outside bounds
-        scales.xPixelToSVG = (function (value) { //auto convert original pixel to scaled pixel
-            return scales.xMilesToSVG(scales.miles(value));
-        });
+        let svgRange = {
+            x: [padding, w - padding * 2],
+            y: [h - padding, padding]
+        };
+        //relative to bottom left
+        let xPixelRange = [50,125];
+        let yPixelRange = [0,50];
 
-        scales.yMilesToSVG = d3.scaleLinear().domain([scales.miles(0), scales.miles(50)])
-            .range([h - padding, padding]); //[h,0] makes it so that smaller numbers are lower; add padding to not go outside bounds
-        scales.yPixelToSVG = (function (value) { //auto convert original pixel to scaled pixel
-            return scales.yMilesToSVG(scales.miles(value));
-        });
+        scales.PixelToMiles = d3.scaleLinear()
+            .domain([0,200]).range([0,12]); //200x200 pixel map -> 12x12 mile map
 
-        // scales.kiviatSize = {}
-        // kiviatSize = d3.min([scales.xPixelToSVG(50), scales.yPixelToSVG(20)])/2;
-        // if(verbose) console.log(kiviatSize);
-        axes.x = d3.axisBottom(scales.xMilesToSVG);
+        scales.xPixelToSVG = d3.scaleLinear().domain(xPixelRange).range(svgRange.x);
+        scales.yPixelToSVG = d3.scaleLinear().domain(yPixelRange).range(svgRange.y);
+
+        scales.xMilesToSVG = d3.scaleLinear().domain([scales.PixelToMiles(50),scales.PixelToMiles(125)]).range(svgRange.x);
+        scales.yMilesToSVG = d3.scaleLinear().domain([scales.PixelToMiles(0), scales.PixelToMiles(50)]).range(svgRange.y);
+
+        //use miles to SVG scales to get correct tick labels
+        let axes = {
+            x: d3.axisBottom(scales.xMilesToSVG),
+            y: d3.axisLeft(scales.yMilesToSVG).ticks(8)
+        };
+
+        //draw axes and glyphs
         svg.append('g')
             .attr('class', 'axis')
             .attr('transform', 'translate(0,' + (h - padding) + ')') //move x-axis to bottom of image
             .call(axes.x);
 
-        axes.y = d3.axisLeft(scales.yMilesToSVG).ticks(6);
         svg.append('g')
             .attr('class', 'axis')
             .attr('transform', 'translate(' + padding + ',0)') //move y-axis right to have readable labels
             .call(axes.y);
 
-        // drawWindGlyphs();
         drawFactories();
-        // drawSensors();
+        drawSensors();
+        drawWindGlyphs();
     };
 
-    //should only be called once
-    function drawFactories() {
-        let factorySVG = svg.selectAll('.factory').data(factories);
-        let offset = kiviatSize * 0.125;
-        factorySVG.exit().remove(); //remove excess
+    function drawWindGlyphs() {
+        //based off of https://codepen.io/zxhfighter/pen/wWKqqX 
+        svg.append('defs').append('marker')
+            .attr('id', 'arrow')
+            .attr('viewBox', '0 0 12 12')
+            .attr('refX', '6')
+            .attr('refY', '6')
+            .attr('markerWidth', '12')
+            .attr('markerHeight', '12')
+            .attr('orient', 'auto');
+        svg.select('#arrow').append('path')
+            .attr('d', 'M2,2 L10,6 L2,10 L6,6 L2,2')
+            .classed('wind-glyph', true);
 
-        //create new as necessary
+        let group = svg.append('g');
+
+        for (let i = 1; i < 4; ++i) {
+            for (let j = 1; j < 4; ++j) {
+                let defaultTransform = `translate(${w * 0.25 * i},${h * 0.25 * j}) scale(2)`;
+                let curGlpyh = group.append("line")
+                    .attr("x1", 0)
+                    .attr("y1", 1)
+                    .attr("x2", 0)
+                    .attr("y2", 0)
+                    .attr("marker-end", "url(#arrow)")
+                    .attr('transform', defaultTransform)
+                    .classed('wind-glyph', true).classed('hide',true);
+                windGlyphs.push({
+                    glyph: curGlpyh,
+                    transformation: defaultTransform
+                });
+            }
+        }
+    }
+
+    function drawFactories(){
+        let factorySVG = svg.selectAll('.factory').data(factories);
+        factorySVG.exit().remove();
+
+        let offset = glyphSize * 0.25;
         let newFactories = factorySVG.enter();
         newFactories.each(function (d, i) {
             let curFactory = d3.select(this);
-            if (d.shape === 'square') {
-                curFactory = curFactory.append('rect')
-                    .attr('width', offset).attr('height', offset)
-                    .attr('x', function (d) { return scales.xPixelToSVG(d.location[0]) - offset / 2; })
-                    .attr('y', function (d) { return scales.yPixelToSVG(d.location[1]) - offset / 2; })
-            } else if (d.shape === 'circle') {
-                curFactory = curFactory.append('circle')
-                    .attr('r', offset / 2).attr('cx', function (d) { return scales.xPixelToSVG(d.location[0]) - offset / 2; })
-                    .attr('cy', function (d) { return scales.yPixelToSVG(d.location[1]) - offset / 2; })
-            } else { //shape is text character
-                curFactory = curFactory.append('text').text(d.shape).attr('font-size', offset * 3)
-                    .attr('x', function (d) { return scales.xPixelToSVG(d.location[0]) - offset / 2; })
-                    .attr('y', function (d) { return scales.yPixelToSVG(d.location[1]); })
-            }
-
-            curFactory.classed('factory', true);
+            let location = {
+                x: scales.xPixelToSVG(d.location[0]),// - offset / 2,
+                y: scales.yPixelToSVG(d.location[1])// - offset / 2
+            };
+            curFactory = curFactory.append('circle').classed('factory',true)
+                .attr('r', offset / 2).classed(`${d.id}`,true)
+                .attr('cx', location.x).attr('cy', location.y);
+            setTooltipEvents(curFactory, `<b>${d.name}</b>`);
+            factories[i].domElement = curFactory;
         });
     }
 
-    function drawSensors() {
-        if(verbose) console.log("scales before draw sensors", scales);
-        let sensors = svg.selectAll('.sensor').data(sensorLocations);
-        sensors.exit().remove(); //remove excess
+    function drawSensors(){
+        let sensorsSVG = svg.selectAll('.sensor').data(sensors);
+        sensorsSVG.exit().remove();
 
-        //create new as necessary
-        sensors.enter().each(function (d, i) {
-            let curGraph = new Kiviat(svg, {
-                x: scales.xPixelToSVG(d.location[0]) - (kiviatSize / 2),
-                y: scales.yPixelToSVG(d.location[1]) - (kiviatSize / 2)
-            }, d.name, scales, {
-                    w: kiviatSize,
-                    h: kiviatSize
-                });
-            curGraph.init();
-            curGraph.update();
-            sensorGraphs.push(curGraph);
+        let offset = glyphSize;
+        let newSensors = sensorsSVG.enter();
+        newSensors.each(function(d,i){
+            let curSensor = d3.select(this);
+            let location = {
+                x: scales.xPixelToSVG(d.location[0]) - offset / 2,
+                y: scales.yPixelToSVG(d.location[1]) - offset / 2
+            };
+            curSensor = curSensor.append('rect').classed('sensor',true)
+                .attr('width',glyphSize).attr('height',glyphSize)
+                .attr('x',location.x).attr('y',location.y)
+            setTooltipEvents(curSensor, `<b>Sensor ${d.name}</b>`);
+            sensors[i].domElement = curSensor;
         });
     }
 
-    function updateSensors(readings) {
-        for (let sensor in readings) {
-            let sensorIndex = +(sensor.split('sensor')[1]) - 1;
-            if (isNaN(sensorIndex)) { //not a sensor object
-                if(verbose) console.log(sensor, "is not a sensor field; skipping");
-                continue;
-            } else {
-                // if(verbose) console.log("updating sensor",sensorIndex+1,"with",readings[sensor]);
-            }
-            let curGraph = sensorGraphs[sensorIndex];
-            curGraph.update(readings[sensor]);
+    self.setSimulationMode = function(bool,data,time_stamp){
+        isSimulating = bool;
+
+        windVectors = [];
+        timeStamps = [];
+
+        for(let arrow of windGlyphs){
+            arrow.glyph.classed('hide',bool !== true);
         }
-    }
+
+        if(!bool){
+            for(let f of factories){
+                drawStreamlinePath(f,[]);
+                drawDiffusionPath(f,[]);
+            }
+        }else{
+            self.update(data,1,true,time_stamp);
+        }
+    };
+
+    //data input is an object with 2 keys: wind and chemical
+    //chemical has keys sensor1,sensor2,...,sensor9
+    //each sensor object has 4 arrays, each keyed by chemical name
+    //wind is an array where each index object has keys direction and speed
+    self.update = function(data,difference,render, time_stamp){
+
+        //update wind simulation data
+        if(!data.wind || data.wind.length === 0){
+            if(isSimulating && render){
+                d3.select('#wind-indicator').text("No wind data found for current time stamp");
+            }
+        }else{
+            let windData = data.wind;
+
+            let rotationAngle = windData[0].direction;
+            console.log("Updating wind");
+            for (let arrow of windGlyphs) {
+                arrow.glyph.attr('transform', `${arrow.transformation} rotate(${rotationAngle})`);
+            }
+            if (windData.length > 1) {
+                d3.select('#wind-indicator').text("Multiple wind readings found for current time stamp. Using first reading.");
+            }
+            if(isSimulating){
+                if(difference > 0){
+                    let svgVector = new Vector((windData[0].vector.x), (windData[0].vector.y));
+                    windVectors.push(svgVector);
+                    timeStamps.push(time_stamp);
+                }else if (difference < 0){
+                    windVectors.pop();
+                    timeStamps.pop();
+                }
+                if(render){
+                    console.log("Calculating path for windVectors",windVectors);
+                    for(let f of factories){
+                        let path = calculateFactoryPath(f,windVectors);
+                        console.log("Plotting for",f.name);
+                        drawDiffusionPath(f,path.diffusion);
+                        drawStreamlinePath(f,path.streamline);
+                        drawStreamlinePoints(f,path.streamline,time_stamp);
+                    }
+                    console.log("Done rendering");
+                }
+            }
+        }
+    };
 
     //calculate the CCW diffusion unit vector from points a, b, and c
     //a is the newest timestamp, and c is the oldest time stamp
@@ -251,16 +311,22 @@ let StreamlineGraph = function (options) {
         }
     }
 
-    function drawDiffusionPath(points, diffusionVectors, path_id) {
-        while (path_id.indexOf(" ") > -1) {
-            path_id = path_id.replace(" ", "_");
+    //points should be in SVG coordinates already
+    function calculateDiffusionPath(points){
+        function calculateDiffusionVectors(points) {
+            let diffusionVectors = [];
+            for (let f = 0; f < points.length; ++f) {
+                diffusionVectors.push(calculateDiffusionVector(points[f - 1], points[f], points[f + 1]));
+            }
+            return diffusionVectors;
         }
-        svg.selectAll(`#${path_id}-diffusion`).remove();
-        if(diffusionVectors.length === 0){
-            return;
-        }
+
         let path_points = [];
-        console.log("Diffusion:", diffusionVectors, "points:", points);
+        if(points.length < 2){
+            return [];
+        }
+        let diffusionVectors = calculateDiffusionVectors(points);
+
         let end = diffusionVectors.length - 1;
         let multiplier = diffusion_rate * -2;
         //draw half of the path
@@ -283,160 +349,52 @@ let StreamlineGraph = function (options) {
             path_points.push(points[f].add(diffusionVectors[f].multiply(multiplier * f)));
         }
 
-        //draw path points
-        // for (let p of path_points) {
-        //     plotPointAt(p).attr('r', 5).attr('id', `${path_id}-diffusion`).attr('fill','red');
-        // }
-
-        // svg.append('path')
-        //     // .attr('id',`${path_id}`)
-        //     .datum(path_points)
-        //     .attr('stroke', 'red')
-        //     .attr('fill', 'none')
-        //     // .classed('chemical-streamline',true)
-        //     // .attr('d', (d) => { return d; });
-        //     .attr('d', line)
-
-        svg.append('path')
-            .attr('id', `${path_id}-diffusion`)
-            .datum(path_points)
-            .classed('chemical-streamline', true)
-            .attr('d', line)
-            .attr('style','stroke:red;');
+        return path_points;
     }
 
-    //input is the same input as drawSimulationPath
-    function drawDiffusionPath_old(vectors,diffusionVectors,path_id){
-        while (path_id.indexOf(" ") > -1) {
-            path_id = path_id.replace(" ", "_");
+    function calculateFactoryPath(factory,vectors) {
+        let streamline_points = []//, diffusion_points = [];
+        let startLocation = new Vector(scales.PixelToMiles(factory.location[0]), scales.PixelToMiles(factory.location[1]));
+        let end = vectors.length - 1;
+        for (let v = 0; v <= end; ++v) {
+            let curPoint = startLocation.multiply(1);
+            //add vectors to get correct offset
+            for (let p = v; p < end; ++p) {
+                curPoint = curPoint.add(vectors[p]);
+            }
+            streamline_points.push(curPoint);
         }
-        if (verbose) console.log("Diffusion vectors for", path_id, diffusionVectors);
-        svg.selectAll(`#${path_id}-diffusion`).remove();
-        svg.append('path')
-            .attr('id', `${path_id}-diffusion`)
-            .datum(diffusionVectors)
-            .classed('chemical-streamline', true)
-            .attr('d', line);
+        streamline_points = streamline_points.map((p) => { return new Vector(scales.xMilesToSVG(p.x), scales.yMilesToSVG(p.y)); });
+        diffusion_points = calculateDiffusionPath(streamline_points.reverse());
+
+        return {
+            streamline: streamline_points,
+            diffusion: diffusion_points
+        };
     }
 
-    function drawSimulationPath(vectors, path_id){
-        while(path_id.indexOf(" ") > -1){
-            path_id = path_id.replace(" ","_");
+    function drawStreamlinePoints(factory,points,cur_time_stamp){
+        for (let p = 0; p < points.length; ++p) {
+            // console.log("Drawing point",p);
+            let curPoint = drawPointAt(points[p])
+                .classed(`${factory.id}`, true)
+                .attr('id', `${factory.id}-streamline`)
+                .attr('r', 3)
+                .attr('style', 'opacity:0.75;')
+            setTooltipEvents(curPoint, `<b class=${factory.id}>${factory.name}</b><br>${timeStamps[points.length - p] || cur_time_stamp}`);
         }
-        if(verbose) console.log("Vectors for",path_id,vectors);
-        let diffusion_path = [];
-        svg.selectAll(`#${path_id}`).remove();;
-        svg.append('path')
-            .attr('id',`${path_id}`)
-            .datum(vectors)
-            .classed('chemical-streamline',true)
-            .each((data) => {
-                for(let p = 0; p < data.length; ++p){
-                    // plotPointAt(data[p]).attr('id', `${path_id}`).attr('r',5);
-                    diffusion_path.unshift(calculateDiffusionVector(data[p-1],data[p],data[p+1]));
-                }
-            })
-            .attr('d', line)
-        if (path_id === 'Roadrunner_Fitness_Electronics')
-            drawDiffusionPath(vectors.reverse(),diffusion_path.reverse(),path_id);
     }
 
-    function calculateFactoryDiffusionVectors(factory){
-        if(windVectors.length === 0){
-            return;
-        }
-        let points = [];
-        let startLocation = [scales.miles(factory.location[0]), scales.miles(factory.location[1])];
-        //generate points from windVector array by adding the windVectors to the current point
-        // use <= to add current factory location to end of array
-        for (let v = 0; v <= windVectors.length; ++v) {
-            let curPoint = new Vector(startLocation[0], startLocation[1]);
-            // if(verbose) console.log("inital point for",v,curPoint);
-            // let vMax = windVectors.length - v;
-            for (let p = v; p < windVectors.length; ++p) {
-                // if(verbose) console.log("adding",windVectors[p])
-                curPoint = curPoint.add(windVectors[p]);
-            }
-            // if(verbose) console.log("final point for", v, curPoint);
-            points.push(curPoint);
-        }
-
-        let diffusionVectors = factory.diffusionVectors;
-        let p;
-        //calculate diffusion vectors as necessary
-        for(p = 0; p < points.length; ++p){
-            if(!diffusionVectors[p]){
-                diffusionVectors[p] = calculateDiffusionVector(points[p-1], points[p],points[p+1]);
-            }
-        }
-        //remove any excess
-        while(p <= diffusionVectors.length){
-            diffusionVectors.pop();
-        }
-        console.log("After calculations",diffusionVectors);
+    function drawStreamlinePath(factory,points){
+        svg.selectAll(`#${factory.id}-streamline`).remove();
+        svg.append('path').attr('id',`${factory.id}-streamline`).classed(`${factory.id}`,true)
+            .datum(points).attr('d',line).attr('style','fill: none; pointer-events:none;')
     }
 
-    function drawFactoryPaths(factory){
-        let points = [],p;
-        let startLocation = [scales.miles(factory.location[0]), scales.miles(factory.location[1])];
-        //generate points from windVector array by adding the windVectors to the current point
-        //use <= to add current factory location to end of array
-        for(let v = 0; v <= windVectors.length; ++v){
-            let curPoint = new Vector(startLocation[0], startLocation[1]);
-            // if(verbose) console.log("inital point for",v,curPoint);
-            // let vMax = windVectors.length - v;
-            for(p = v; p < windVectors.length; ++p){
-                // if(verbose) console.log("adding",windVectors[p])
-                curPoint = curPoint.add(windVectors[p]);
-            }
-            // if(verbose) console.log("final point for", v, curPoint);
-            points.push(curPoint);
-        }
-        
-        drawSimulationPath(points, factory.name);
-        // drawDiffusionPath(points,factory.diffusionVectors,factory.name);
-        // points.push(new Vector(scales.miles(f.location[0]), scales.miles(f.location[1])));
+    function drawDiffusionPath(factory,points){
+        svg.selectAll(`#${factory.id}-diffusion`).remove();
+        svg.append('path').attr('id', `${factory.id}-diffusion`).classed(`${factory.id}`, true)
+            .datum(points).attr('d', line).attr('style', 'opacity: 0.5; pointer-events:none;')
     }
+}
 
-    //data input is an object with 2 keys: wind and chemical
-    //chemical has keys sensor1,sensor2,...,sensor9
-    //each sensor object has 4 arrays, each keyed by chemical name
-    //wind is an array where each index object has keys direction and speed
-    self.update = function (data, difference,render) {
-        if(verbose) console.log("Entered update with", data,difference,render);
-        // updateSensors(data.chemical);
-
-        if(!data.wind){
-            if(isSimulating && render){
-                updateWindIndicator("No wind data found for current time stamp");
-            }
-            return;
-        }
-
-        let windData = data.wind;
-
-        if(isSimulating){
-            //calculate vectors as necessary
-            if(difference !== 0){
-                if (difference > 0) {
-                    windVectors.push(windData[0].vector);
-                } else if (difference < 0) {
-                    windVectors.pop();
-                }
-
-                // for(let f of factories){
-                //     calculateFactoryDiffusionVectors(f);
-                // }
-                calculateFactoryDiffusionVectors(factories[0]);
-            }
-
-            // if(verbose) console.log("windVectors",windVectors);
-            if(render){
-                for(let f of factories){
-                    drawFactoryPaths(f);
-                }   
-            }
-        }
-    };
-
-};

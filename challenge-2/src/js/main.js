@@ -3,7 +3,7 @@ let Challenge2 = function(options){
     options = options || {};
     let self = this;
     self.data = {};
-    self.middleMap = new StreamlineGraph(options);
+    self.streamLineMap = new StreamlineGraph(options);
     self.osp = [];
     self.windModeIndex = 0;
     let verbose = options.verbose || false;
@@ -20,7 +20,7 @@ let Challenge2 = function(options){
 
     function init(){
         return loadData().then(function(){
-            loadMiddleMap();
+            loadStreamlineMap();
             // loadOSPs();
 
             //populate interpolation dropdown
@@ -345,7 +345,7 @@ let Challenge2 = function(options){
     }
     this.loadData = loadData;
 
-    function loadMiddleMap(){
+    function loadStreamlineMap(){
         let options = {
             scales: {
                 Appluimonia: self.data.chemical._statistics.Appluimonia.scale,
@@ -355,7 +355,7 @@ let Challenge2 = function(options){
                 wind: self.data.wind._statistics.scale
             }
         }
-        self.middleMap.init(options);
+        self.streamLineMap.init(options);
     }
 
     function convertDateToTimeStamp(date){
@@ -529,7 +529,6 @@ let Challenge2 = function(options){
         }
     }
 
-    // self.loadMiddleMap = loadMiddleMap;
     function getDataAtTimeStamp(time){
         let chemical = self.data.chemical[time];
         let wind = getWindDataAtTimeStamp(time);
@@ -540,20 +539,17 @@ let Challenge2 = function(options){
         };
     }
 
-    function updateMiddleMap(sensorObject, difference,render){
+    function updateStreamLine(time_stamp, difference,render){
         //don't calculate if not simulating
         if(!isSimulating){
             return;
         }
-        console.log("Received request for",sensorObject);
-        if(typeof sensorObject === "string"){
-            time = sensorObject;
-            sensorObject = getDataAtTimeStamp(sensorObject);
-        }
+        let sensorObject = getDataAtTimeStamp(time_stamp);
+        console.log("Received request for",time_stamp);
         
-        self.middleMap.update(sensorObject,difference,render);
+        self.streamLineMap.update(sensorObject,difference,render,time_stamp);
     }
-    self.updateMiddleMap = updateMiddleMap;
+    self.updateStreamLine = updateStreamLine;
 
     function getChemicalTimeStamps(){
         let timestamps = Object.keys(self.data.chemical);
@@ -573,14 +569,14 @@ let Challenge2 = function(options){
     self.startSimulation = function(index, time_stamp){
         self.windModeIndex = index;
         isSimulating = true;
-        getWindDataAtTimeStamp(time_stamp);
+        // getWindDataAtTimeStamp(time_stamp);
         if(verbose) console.log("Interpolation mode", windModes[index]);
-        self.middleMap.setSimulationMode(true);
+        self.streamLineMap.setSimulationMode(true,getDataAtTimeStamp(time_stamp),time_stamp);
     }
 
     self.stopSimulation = function(){
         isSimulating = false;
         d3.select('#wind-indicator').text("---");
-        self.middleMap.setSimulationMode(false);
+        self.streamLineMap.setSimulationMode(false);
     }
 };
