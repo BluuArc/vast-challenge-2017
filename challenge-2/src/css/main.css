@@ -4,10 +4,10 @@
 
 /* based off of http://thenewcode.com/744/Make-SVG-Responsive */
 .svg-container {
-    display: inline-block;
+    /*display: inline-block;*/
     position: relative;
     width: 90%;
-    padding-bottom: 90%;
+    /*padding-bottom: 90%;*/
     vertical-align: middle;
     overflow: hidden;
     /*align-content: center;*/
@@ -17,13 +17,14 @@
 
 .svg-content {
     display: inline-block;
-    position: absolute;
+    /*position: absolute;
     top: 0;
-    left: 0;
+    left: 0;*/
 }
 
 svg {
     font-family: helvetica, sans-serif;
+    background-color: white;
 }
 
 button#interpolation-mode {
@@ -50,43 +51,27 @@ path, line {
 }
 
 .Roadrunner-Fitness-Electronics{
-    fill: #1b9e77;
-    stroke: #1b9e77;
-    color: #1b9e77;
+    fill: #6B6BD2;
+    stroke: #6B6BD2;
+    color: #6B6BD2;
 }
 
 .Kasios-Office-Furniture{
-    fill: #d95f02;
-    stroke: #d95f02;    
-    color: #d95f02;
+    fill: #E8BB48;
+    stroke: #E8BB48;    
+    color: #E8BB48;
 }
 
 .Radiance-ColourTek{
-    fill: #7570b3;
-    stroke: #7570b3;    
-    color: #7570b3;
+    fill: #D86069;
+    stroke: #D86069;    
+    color: #D86069;
 }
 
 .Indigo-Sol-Boards{
-    fill: #f1b6da;
-    stroke: #f1b6da;    
-    color: #f1b6da;
-}
-
-.point {
-    fill: blue;
-}
-
-.current {
-    fill: blue;
-    stroke: none;
-    /*stroke-width: 2;*/
-    /*opacity: 0.25;*/
-    pointer-events: none;
-}
-
-.kiviat-axis {
-    stroke-width: 2px;
+    fill: #CF6ABE;
+    stroke: #CF6ABE;    
+    color: #CF6ABE;
 }
 
 .Appluimonia {
@@ -102,9 +87,9 @@ path, line {
 }
 
 .Methylosmolene {
-    fill: #a6611a;
-    stroke: #a6611a;
-    color: #a6611a;
+    fill: #B15928;
+    stroke: #B15928;
+    color: #B15928;
 }
 
 .AGOC-3A {

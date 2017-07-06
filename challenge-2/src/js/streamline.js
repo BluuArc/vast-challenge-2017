@@ -175,7 +175,7 @@ let StreamlineGraph = function (options) {
             };
             curFactory = curFactory.append('circle').classed('factory',true)
                 .attr('r', offset / 2).classed(`${d.id}`,true)
-                .attr('cx', location.x).attr('cy', location.y);
+                .attr('cx', location.x).attr('cy', location.y).attr('style','fill:lightgray; stroke-width:3px;');
             setTooltipEvents(curFactory, `<b>${d.name}</b>`);
             factories[i].domElement = curFactory;
         });
@@ -433,7 +433,7 @@ let StreamlineGraph = function (options) {
     function drawDiffusionPath(factory,points){
         svg.selectAll(`#${factory.id}-diffusion`).remove();
         svg.append('path').attr('id', `${factory.id}-diffusion`).classed(`${factory.id}`, true)
-            .datum(points).attr('d', line).attr('style', 'opacity: 0.5; pointer-events:none;')
+            .datum(points).attr('d', line).attr('style', 'opacity: 0.5; pointer-events:none; fill:lightgray;')
     }
 }
 
