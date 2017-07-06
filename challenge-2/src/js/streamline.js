@@ -23,7 +23,7 @@ let StreamlineGraph = function (options) {
     let self = this;
     let w = 400, h = 400;
     let padding = 25;
-    let glyphSize = 45; //size of things on the map
+    let glyphSize = 40; //size of things on the map
     let svg = d3.select('#streamline-graph').append('svg').classed('svg-content', true)
         .attr('viewBox', `0 0 ${w} ${h}`).attr('preserveAspectRatio', `xMinYMin meet`).attr('style','border:1px red');
     let scales = {};
@@ -193,11 +193,6 @@ let StreamlineGraph = function (options) {
                 x: scales.xPixelToSVG(d.location[0]) - offset / 2,
                 y: scales.yPixelToSVG(d.location[1]) - offset / 2
             };
-            // curSensor = curSensor.append('rect').classed('sensor',true)
-            //     .attr('width',glyphSize).attr('height',glyphSize)
-            //     .attr('x',location.x).attr('y',location.y)
-            // setTooltipEvents(curSensor, `<b>Sensor ${d.name}</b>`);
-            // sensors[i].domElement = curSensor;
             sensors[i].object = new PixelSensor(curSensor,location,d.name,{
                 scales: scales,
                 quadrantSize: glyphSize/2
@@ -255,6 +250,9 @@ let StreamlineGraph = function (options) {
         if(!data.wind || data.wind.length === 0){
             if(isSimulating && render){
                 d3.select('#wind-indicator').text("No wind data found for current time stamp");
+                for (let arrow of windGlyphs) {
+                    arrow.glyph.classed('hide',true);
+                }
             }
         }else{
             let windData = data.wind;
@@ -262,7 +260,7 @@ let StreamlineGraph = function (options) {
             let rotationAngle = windData[0].direction;
             console.log("Updating wind");
             for (let arrow of windGlyphs) {
-                arrow.glyph.attr('transform', `${arrow.transformation} rotate(${rotationAngle})`);
+                arrow.glyph.attr('transform', `${arrow.transformation} rotate(${rotationAngle})`).classed('hide',false);
             }
             if (windData.length > 1) {
                 d3.select('#wind-indicator').text("Multiple wind readings found for current time stamp. Using first reading.");
