@@ -24,13 +24,13 @@ let Challenge2 = function(options){
             // loadOSPs();
 
             //populate interpolation dropdown
-            d3.select('#interpolation-mode').html(`Interpolation Mode: ${windModes[0]}<span class="caret"></span>`).attr('value',0);
+            d3.select('#interpolation-mode').html(`${windModes[0]}<span class="caret"></span>`).attr('value',0);
             let interpolation_dropdown = d3.select('#interpolation-mode-options');
             for(let w = 0; w < windModes.length; ++w)
                 interpolation_dropdown.append('li').append('a')
                     .attr('href','#').html(`${windModes[w]}`)
                     .on('click',function(){
-                        d3.select('#interpolation-mode').attr('value', w).html(`Interpolation Mode: ${windModes[w]}<span class="caret"></span>`);
+                        d3.select('#interpolation-mode').attr('value', w).html(`${windModes[w]}<span class="caret"></span>`);
                     });
                 // interpolation_dropdown.append('option')
                 // .text(w);
@@ -540,14 +540,19 @@ let Challenge2 = function(options){
     }
 
     function updateStreamLine(time_stamp, difference,render){
-        //don't calculate if not simulating
-        if(!isSimulating){
+        if(!isSimulating && !render){
             return;
         }
+        //don't calculate if not simulating
         let sensorObject = getDataAtTimeStamp(time_stamp);
-        console.log("Received request for",time_stamp);
+        if(verbose) console.log("Received request for",time_stamp);
         
-        self.streamLineMap.update(sensorObject,difference,render,time_stamp);
+        if(isSimulating){
+            self.streamLineMap.update(sensorObject,difference,render,time_stamp);
+        }else if(render){
+            //update chemical readings only
+            self.streamLineMap.updateChemicalReadings(sensorObject, difference, render, time_stamp);
+        }
     }
     self.updateStreamLine = updateStreamLine;
 

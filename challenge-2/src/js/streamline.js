@@ -2,6 +2,21 @@
 
 var tooltip = tooltip || new Tooltip();
 
+//based off of http://bl.ocks.org/eesur/4e0a69d57d3bfc8a82c2
+d3.selection.prototype.moveToFront = function () {
+    return this.each(function () {
+        this.parentNode.appendChild(this);
+    });
+};
+d3.selection.prototype.moveToBack = function () {
+    return this.each(function () {
+        var firstChild = this.parentNode.firstChild;
+        if (firstChild) {
+            this.parentNode.insertBefore(this, firstChild);
+        }
+    });
+};
+
 let StreamlineGraph = function (options) {
     console.log("received options:", options);
     options = options || {};
@@ -16,6 +31,7 @@ let StreamlineGraph = function (options) {
     let isSimulating = false;
     let windVectors = [], timeStamps = [];
     let diffusion_rate = 1;
+    let verbose = options.verbose || false;
 
     let line = d3.line()
         .x((d) => { return d.x; }).y((d) => {return d.y; })
@@ -177,11 +193,17 @@ let StreamlineGraph = function (options) {
                 x: scales.xPixelToSVG(d.location[0]) - offset / 2,
                 y: scales.yPixelToSVG(d.location[1]) - offset / 2
             };
-            curSensor = curSensor.append('rect').classed('sensor',true)
-                .attr('width',glyphSize).attr('height',glyphSize)
-                .attr('x',location.x).attr('y',location.y)
-            setTooltipEvents(curSensor, `<b>Sensor ${d.name}</b>`);
-            sensors[i].domElement = curSensor;
+            // curSensor = curSensor.append('rect').classed('sensor',true)
+            //     .attr('width',glyphSize).attr('height',glyphSize)
+            //     .attr('x',location.x).attr('y',location.y)
+            // setTooltipEvents(curSensor, `<b>Sensor ${d.name}</b>`);
+            // sensors[i].domElement = curSensor;
+            sensors[i].object = new PixelSensor(curSensor,location,d.name,{
+                scales: scales,
+                quadrantSize: glyphSize/2
+            });
+
+            sensors[i].object.init();
         });
     }
 
@@ -205,13 +227,31 @@ let StreamlineGraph = function (options) {
         }
     };
 
+    self.updateChemicalReadings = function(data){
+        //update chemical data
+        if (!data.chemical) {
+            for (let s of sensors) {
+                s.object.update();
+            }
+        } else {
+            let chemicalData = data.chemical;
+            for (let s in chemicalData) {
+                let index = +(s.split('sensor')[1]) - 1;
+                // console.log("Updating sensor", index + 1);
+                sensors[index].object.update(chemicalData[s]);
+                sensors[index].object.graph.moveToFront();
+            }
+        }
+    }
+
     //data input is an object with 2 keys: wind and chemical
     //chemical has keys sensor1,sensor2,...,sensor9
     //each sensor object has 4 arrays, each keyed by chemical name
     //wind is an array where each index object has keys direction and speed
     self.update = function(data,difference,render, time_stamp){
+        if(verbose)console.log("Entered streamline update with",arguments);
 
-        //update wind simulation data
+        //update wind simulation data first
         if(!data.wind || data.wind.length === 0){
             if(isSimulating && render){
                 d3.select('#wind-indicator').text("No wind data found for current time stamp");
@@ -249,6 +289,8 @@ let StreamlineGraph = function (options) {
                 }
             }
         }
+
+        self.updateChemicalReadings(data);
     };
 
     //calculate the CCW diffusion unit vector from points a, b, and c
@@ -259,7 +301,6 @@ let StreamlineGraph = function (options) {
                /  |
              \/_  |
           bisect  a
-
     */
     function calculateDiffusionVector(a, b, c) {
         let vectorA, vectorB, unitBisect, doRotate = false;
@@ -398,3 +439,191 @@ let StreamlineGraph = function (options) {
     }
 }
 
+//position is where the center of hte pixelSensor should be
+let PixelSensor = function(parent,position,sensorNumber, options){
+    options = options || {};
+    let self = this;
+
+    let quadrantSize = options.quadrantSize || 20;
+    let center = {
+        x: quadrantSize,
+        y: quadrantSize
+    };
+    let notificationBubble;
+    let scales = options.scales || {};
+    let line = d3.line()
+        .x(function (d) { return d.x; })
+        .y(function (d) { return d.y; });
+
+    //create group on parent
+    parent.append('g').classed('pixel-sensor',true).attr('id',`pixel-sensor-${sensorNumber}`)
+        .attr('transform',`translate(${position.x},${position.y})`)
+        .append('rect').attr('x',0).attr('y',0).attr('width',quadrantSize*2).attr('height',quadrantSize*2)
+        .attr('style','fill:white');
+    self.graph = d3.select(`#pixel-sensor-${sensorNumber}`);
+
+    let chemicals = {
+        'Appluimonia': {
+            reading: 0,
+            position: [0,0],
+            domElement: undefined
+        },
+        'Chlorodinine': {
+            reading: 0,
+            position: [quadrantSize,0],
+            domElement: undefined
+        },
+        'Methylosmolene': {
+            reading: 0,
+            position: [0,quadrantSize],
+            domElement: undefined
+        },
+        'AGOC-3A': {
+            reading: 0,
+            position: [quadrantSize,quadrantSize],
+            domElement: undefined
+        },
+    };
+
+    //empty message removes events
+    function setTooltipEvents(target, message) {
+        if (!message || message.length === 0) {
+            target.on('mouseenter', undefined)
+                .on('mouseleave', undefined);
+        } else {
+            target.on('mouseenter', function () {
+                tooltip.setContent(message);
+                tooltip.showAt(d3.event.pageX, d3.event.pageY);
+            }).on('mouseleave', function () {
+                tooltip.hide();
+            });
+        }
+    }
+
+    function drawSensorLabelOverlay(){
+        let axesCoords = {
+            vertical: [new Vector(quadrantSize,0),new Vector(quadrantSize,quadrantSize*2)],
+            horizontal: [new Vector(0,quadrantSize),new Vector(quadrantSize*2,quadrantSize)]
+        };
+        //draw axes
+        for(let a in axesCoords){
+            self.graph.append('path').datum(axesCoords[a])
+            .classed('sensor-label-overlay',true).attr('d',line);
+        }
+
+        //draw border
+        self.graph.append('rect')
+            .attr('x', 0).attr('y', 0)
+            .attr('width', quadrantSize * 2).attr('height', quadrantSize * 2)
+            .classed('sensor-label-overlay',true).attr('style', 'fill:none');
+
+        //draw center piece
+        self.graph.append('circle')
+            .attr('cx', center.x).attr('cy', center.y)
+            .attr('r', quadrantSize * 0.25)
+            .classed('sensor-label-overlay',true);
+        self.graph.append('text').classed('sensor-label', true)
+            .attr('x', center.x).attr('y', center.y)
+            .text(sensorNumber)
+            .attr('text-anchor', 'middle')
+            .attr('alignment-baseline', 'middle');
+        notificationBubble = self.graph.append('circle').classed('sensor-label-mouseover', true)
+            .attr('cx', center.x).attr('cy', center.y)
+            .attr('r', quadrantSize * 0.25);
+    }
+
+    function setSensorMouseOver(sensorElement){
+        sensorElement.on('mouseenter',function(){
+            let element = d3.select(this);
+            let chemical = element.attr('id');
+            let value = element.attr('value');
+            let domain = scales[chemical].domain();
+            let content = `<b class="${chemical}">${chemical}</b><br>`
+            content += `<b>Reading:</b> ${value} ppm`;
+            content += `<br><b>Overall Min:</b> ${domain[0]}<br><b>Overall Max:</b> ${domain[1]}`;
+            tooltip.setContent(content);
+            tooltip.showAt(d3.event.pageX,d3.event.pageY);
+        }).on('mouseleave',function(){
+            tooltip.hide();
+        });
+    }
+
+    self.init = function(){
+        let opacityRange = [0.1,1];
+        //initialize scale range to be with respect to opacity
+        scales.Appluimonia = (scales.Appluimonia || d3.scaleLinear().domain([0, 2])).range(opacityRange);
+        scales.Chlorodinine = (scales.Chlorodinine || d3.scaleLinear().domain([0, 2])).range(opacityRange);
+        scales.Methylosmolene = (scales.Methylosmolene || d3.scaleLinear().domain([0, 2])).range(opacityRange);
+        scales['AGOC-3A'] = (scales['AGOC-3A'] || d3.scaleLinear().domain([0, 2])).range(opacityRange);
+
+        //draw quadrants
+        for(let c in chemicals){
+            self.graph.append('rect').attr('width',quadrantSize).attr('height',quadrantSize)
+                .attr('x',chemicals[c].position[0]).attr('y',chemicals[c].position[1])
+                .classed(`${c}`,true).classed('chemical',true).attr('id',`${c}`);
+            chemicals[c].domElement = self.graph.select(`.${c}`);
+            setSensorMouseOver(chemicals[c].domElement);
+        }
+
+        //put sensor number
+        drawSensorLabelOverlay();
+
+        updateReadings();
+    }
+
+    function updateReadings(data){
+        //sample data set
+        data = data || {
+            'Appluimonia': [1.25],
+            'Chlorodinine': [1.8],
+            'Methylosmolene': [],
+            'AGOC-3A': [1,5] 
+        }
+
+        //store data into chemicals object
+        let error_messages = [];
+        for(let c in chemicals){
+            if(data[c] !== undefined && data[c].length > 0){
+                chemicals[c].reading = ((arr) => {
+                    switch (arr.length) {
+                        case 1: return arr[0];
+                        default: return arr;
+                    }
+                })(data[c]);
+            }else{
+                chemicals[c].reading = 0; //default 0 when no data is given
+                error_messages.push(`<b class="${c}">${c}</b> has no readings`);
+            }
+            self.graph.select(`#${c}`).attr('value', JSON.stringify(chemicals[c].reading));
+
+            //don't plot anything if array
+            if(chemicals[c].reading instanceof Array){
+                error_messages.push(`<b class="${c}">${c}</b> has more than one reading`);
+                chemicals[c].reading = 0;
+            }
+        }
+
+        //set error message
+        if(error_messages.length > 0){
+            console.log("Setting error messages");
+            setTooltipEvents(notificationBubble,error_messages.join("<br>"));
+            notificationBubble.classed('error',true);
+        }else{
+            setTooltipEvents(notificationBubble,"");
+            notificationBubble.classed('error',false);
+        }
+
+        draw();
+    }
+    self.update = updateReadings;
+
+    function draw(){
+        for(let c in chemicals){
+            if(chemicals[c].reading !== 0){
+                chemicals[c].domElement.attr('style',`opacity: ${scales[c](chemicals[c].reading)}`).classed('no-data',false);
+            }else{
+                chemicals[c].domElement.attr('style', `opacity: 1`).classed('no-data', true);
+            }
+        }
+    }
+}
