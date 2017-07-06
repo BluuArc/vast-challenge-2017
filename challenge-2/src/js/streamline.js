@@ -30,7 +30,7 @@ let StreamlineGraph = function (options) {
     let windGlyphs = [];
     let isSimulating = false;
     let windVectors = [], timeStamps = [];
-    let diffusion_rate = 1;
+    let diffusion_rate = 0.005;
     let verbose = options.verbose || false;
 
     let line = d3.line()
@@ -93,17 +93,21 @@ let StreamlineGraph = function (options) {
         };
         //relative to bottom left
         let xPixelRange = [50,125];
-        let yPixelRange = [0,50];
+        let yPixelRange = [60,-15];
+        let maxRange = Math.max(w,h);
+        let range = [padding, maxRange-padding];
 
         scales.PixelToMiles = d3.scaleLinear()
             .domain([0,200]).range([0,12]); //200x200 pixel map -> 12x12 mile map
 
-        scales.xPixelToSVG = d3.scaleLinear().domain(xPixelRange).range(svgRange.x);
-        scales.yPixelToSVG = d3.scaleLinear().domain(yPixelRange).range(svgRange.y);
+        scales.xPixelToSVG = d3.scaleLinear().domain(xPixelRange).range(range);
+        scales.yPixelToSVG = d3.scaleLinear().domain(yPixelRange).range(range);
 
-        scales.xMilesToSVG = d3.scaleLinear().domain([scales.PixelToMiles(50),scales.PixelToMiles(125)]).range(svgRange.x);
-        scales.yMilesToSVG = d3.scaleLinear().domain([scales.PixelToMiles(0), scales.PixelToMiles(50)]).range(svgRange.y);
-
+        scales.MilesToSVG = d3.scaleLinear().domain([0,scales.PixelToMiles(75)]).range([0,maxRange]);
+        scales.xMilesToSVG = d3.scaleLinear().domain([scales.PixelToMiles(xPixelRange[0]),scales.PixelToMiles(xPixelRange[1])]).range(range);
+        scales.yMilesToSVG = d3.scaleLinear().domain([scales.PixelToMiles(yPixelRange[0]), scales.PixelToMiles(yPixelRange[1])]).range(range);
+        // console.log(scales.MilesToSVG(0), scales.xMilesToSVG(0), scales.yMilesToSVG(0));
+        // console.log(scales.MilesToSVG(12),scales.xMilesToSVG(12),scales.yMilesToSVG(12));
         //use miles to SVG scales to get correct tick labels
         let axes = {
             x: d3.axisBottom(scales.xMilesToSVG),
@@ -334,8 +338,8 @@ let StreamlineGraph = function (options) {
 
             // show red reference points
             // let multiplier = 20;
-            // plotPointAt(b.add(unitB.multiply(multiplier))).attr('fill','red');
-            // plotPointAt(b.add(unitReverseA.multiply(multiplier))).attr('fill','red');
+            // drawPointAt(b.add(unitB.multiply(multiplier))).attr('fill','red');
+            // drawPointAt(b.add(unitReverseA.multiply(multiplier))).attr('fill','red');
 
             let fullBisect = unitB.add(unitReverseA);
             unitBisect = fullBisect.unit(); //this is what get's saved
@@ -367,10 +371,11 @@ let StreamlineGraph = function (options) {
         let diffusionVectors = calculateDiffusionVectors(points);
 
         let end = diffusionVectors.length - 1;
-        let multiplier = diffusion_rate * -2;
+        let multiplier = scales.MilesToSVG(diffusion_rate);
+        console.log("DiffusionRate",diffusion_rate,multiplier);
         //draw half of the path
         for (let f = 0; f < diffusionVectors.length; ++f) {
-            path_points.push(points[f].add(diffusionVectors[f].multiply(-multiplier * f)));
+            path_points.push(points[f].add(diffusionVectors[f].multiply(multiplier * f)));
         }
 
         //add middle point
@@ -378,14 +383,14 @@ let StreamlineGraph = function (options) {
         let endPoint = ((a, b, c) => {
             //excerpt from calculateDiffusionVector
             let vectorA = b.subtract(a); //a -> b
-            let vectorB = vectorA.multiply(-1);
+            // let vectorB = vectorA.multiply(-1);
             return vectorA.unit();
         })(points[end - 1], points[end]);
-        endPoint = points[end].add(endPoint.multiply(-multiplier * end));
+        endPoint = points[end].add(endPoint.multiply(multiplier * end));
         path_points.push(endPoint);
 
         for (let f = end; f >= 0; --f) {
-            path_points.push(points[f].add(diffusionVectors[f].multiply(multiplier * f)));
+            path_points.push(points[f].add(diffusionVectors[f].multiply(-multiplier * f)));
         }
 
         return path_points;
@@ -589,7 +594,7 @@ let PixelSensor = function(parent,position,sensorNumber, options){
                     }
                 })(data[c]);
             }else{
-                chemicals[c].reading = 0; //default 0 when no data is given
+                chemicals[c].reading = NaN; //default 0 when no data is given
                 error_messages.push(`<b class="${c}">${c}</b> has no readings`);
             }
             self.graph.select(`#${c}`).attr('value', JSON.stringify(chemicals[c].reading));
@@ -597,7 +602,7 @@ let PixelSensor = function(parent,position,sensorNumber, options){
             //don't plot anything if array
             if(chemicals[c].reading instanceof Array){
                 error_messages.push(`<b class="${c}">${c}</b> has more than one reading`);
-                chemicals[c].reading = 0;
+                chemicals[c].reading = NaN;
             }
         }
 
@@ -617,7 +622,7 @@ let PixelSensor = function(parent,position,sensorNumber, options){
 
     function draw(){
         for(let c in chemicals){
-            if(chemicals[c].reading !== 0){
+            if(!isNaN(chemicals[c].reading) && chemicals[c].reading !== 0){
                 chemicals[c].domElement.attr('style',`opacity: ${scales[c](chemicals[c].reading)}`).classed('no-data',false);
             }else{
                 chemicals[c].domElement.attr('style', `opacity: 1`).classed('no-data', true);
