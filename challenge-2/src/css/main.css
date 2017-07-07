@@ -43,6 +43,9 @@ path, line {
 }
 
 .factory {
+    fill: darkgray;
+    stroke: darkgray;    
+    color: darkgray;
     opacity: 0.75;
 }
 
@@ -50,7 +53,18 @@ path, line {
     opacity: 1;
 }
 
-.Roadrunner-Fitness-Electronics{
+.diffusion-mouseover {
+    fill: none;
+    stroke-width: 15px;
+    stroke: transparent;
+}
+
+.diffusion-mouseover:hover {
+    stroke: #555555;
+    opacity: 0.1;
+}
+
+/*.Roadrunner-Fitness-Electronics{
     fill: #6B6BD2;
     stroke: #6B6BD2;
     color: #6B6BD2;
@@ -72,7 +86,7 @@ path, line {
     fill: #CF6ABE;
     stroke: #CF6ABE;    
     color: #CF6ABE;
-}
+}*/
 
 .Appluimonia {
     fill: #ca0020;
@@ -218,4 +232,22 @@ line.wind-glyph.hide {
 
 p.control-label {
     display: inline-block;
+}
+
+.streamline-legend {
+    fill: lightgray;
+    stroke: black;
+}
+
+text.legend-title {
+    font-size: x-small;
+    text-anchor: middle;
+    fill: black;
+    stroke: black;
+}
+
+text.legend-label {
+    font-size: xx-small;
+    fill: black;
+    stroke: black;
 }

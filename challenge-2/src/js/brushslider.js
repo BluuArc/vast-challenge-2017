@@ -61,6 +61,8 @@ let TimeSlider = function(options){
             .range([(2*w/3)-padding(w-padding)]);
 
         scales.monthScales = monthScales;
+
+        // scales.svgRange
     }
 
 

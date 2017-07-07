@@ -22,12 +22,12 @@ let StreamlineGraph = function (options) {
     options = options || {};
     let self = this;
     let w = 400, h = 400;
-    let padding = 25;
+    let padding = 30;
     let glyphSize = 40; //size of things on the map
     let svg = d3.select('#streamline-graph').append('svg').classed('svg-content', true)
         .attr('viewBox', `0 0 ${w} ${h}`).attr('preserveAspectRatio', `xMinYMin meet`);
     let scales = {};
-    let windGlyphs = [];
+    let windGlyphs = [], legend;
     let isSimulating = false;
     let windVectors = [], timeStamps = [];
     let diffusion_rate = 0.005;
@@ -125,9 +125,27 @@ let StreamlineGraph = function (options) {
             .attr('transform', 'translate(' + padding + ',0)') //move y-axis right to have readable labels
             .call(axes.y);
 
+        svg.append('text').classed('axis-label',true)
+            .attr('text-anchor','middle').attr('transform',`translate(${w/2},${h})`)
+            .text('Miles (West-East)');
+
+        svg.append('text').classed('axis-label', true)
+            .attr('text-anchor', 'middle').attr('transform', `translate(${padding*0.25},${h/2}) rotate(-90)`)
+            .text('Miles (South-North)');
+
         drawFactories();
         drawSensors();
         drawWindGlyphs();
+
+        legend = new StreamlineLegend(svg,new Vector(250,270),{
+            factoryConstructor: (parent) => {
+                let curFactory = parent.append('circle').classed('factory', true)
+                    .attr('r', (glyphSize*0.25) / 2).attr('style', 'fill:lightgray; stroke-width:3px;');
+                setTooltipEvents(curFactory, `<b>Factory Name Shows Up Here</b>`);
+                return curFactory;
+            },
+        });
+        legend.init();
     };
 
     function drawWindGlyphs() {
@@ -440,7 +458,10 @@ let StreamlineGraph = function (options) {
     function drawStreamlinePath(factory,points){
         svg.selectAll(`#${factory.id}-streamline`).remove();
         svg.append('path').attr('id',`${factory.id}-streamline`).classed(`${factory.id}`,true)
-            .datum(points).attr('d',line).attr('style','fill: none; pointer-events:none;')
+            .datum(points).attr('d',line).attr('style','fill: none; pointer-events:none;');
+        let path = svg.append('path').attr('id', `${factory.id}-streamline-mouseover`).classed(`${factory.id}`, true).classed(`diffusion-mouseover`, true)
+            .datum(points).attr('d', line);
+        setTooltipEvents(path,`${factory.name}`);
     }
 
     function drawDiffusionPath(factory,points){
@@ -636,5 +657,51 @@ let PixelSensor = function(parent,position,sensorNumber, options){
                 chemicals[c].domElement.attr('style', `opacity: 1`).classed('no-data', true);
             }
         }
+    }
+}
+
+let StreamlineLegend = function(parent,position,options){
+    options = options || {};
+    let self = this;
+
+    let padding = 25;
+    let w = 125, h = 100;
+
+    parent.append('g').classed('streamline-legend',true).attr('transform',`translate(${position.x},${position.y})`)
+    .append('rect').attr('x',0).attr('y',0).attr('width',w).attr('height',h);
+
+    self.graph = d3.select('.streamline-legend');
+
+    function drawPointAt(x, y) {
+        if (x instanceof Vector) {
+            y = x.y;
+            x = x.x;
+        }
+
+        return self.graph.append('circle')
+            .attr('r', 5)
+            .attr('cx', x)
+            .attr('cy', y);
+    }
+
+    self.init = function(){
+        drawPointAt(35,50);
+
+        let container = self.graph;
+
+        container.append('text').text("Streamline Map Legend")
+            .attr('x',w/2).attr('y',10).classed('legend-title',true);
+            // .attr('font-size','x-small').attr('text-anchor','middle')
+            // .attr('fill','black').attr('stroke','black');
+
+        options.factoryConstructor(container).attr('cx',20).attr('cy',25);
+        container.append('text').text('Factory Location').classed('legend-label',true)
+        .attr('x',35).attr('y',28);
+        /*
+        append('circle').classed('factory',true)
+                .attr('r', offset / 2).classed(`${d.id}`,true)
+                .attr('cx', location.x).attr('cy', location.y).attr('style','fill:lightgray; stroke-width:3px;');
+            setTooltipEvents(curFactory, `<b>${d.name}</b>`);
+        */
     }
 }
