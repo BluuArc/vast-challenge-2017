@@ -14,6 +14,7 @@
     <script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
     <script src="./src/js/vector.js"></script>
     <script src="./src/js/tooltip.js"></script>
+    <script src="./src/js/brushslider.js"></script>
     <script src="./src/js/streamline.js"></script>
     <script src="./src/js/main.js"></script>
 </head>
@@ -25,6 +26,10 @@
         <div class="row">
             <input id="timestamp-slider" type="range" value="0" style="max-width: 98%; margin:1%; height:20px; -webkit-appearance:none;"/>
             <div id="input-disabler"></div>
+        </div>
+        <div class="row" style="display:none;">
+            <div class="svg-container" id="timestamp-brush-slider" style="border: 1px solid gray; background-color:white; margin-left: 1%; margin-right: 1%;">
+            </div>
         </div>
         <!--Controls and Info-->
         <div class="row">

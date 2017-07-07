@@ -25,7 +25,7 @@ let StreamlineGraph = function (options) {
     let padding = 25;
     let glyphSize = 40; //size of things on the map
     let svg = d3.select('#streamline-graph').append('svg').classed('svg-content', true)
-        .attr('viewBox', `0 0 ${w} ${h}`).attr('preserveAspectRatio', `xMinYMin meet`).attr('style','border:1px red');
+        .attr('viewBox', `0 0 ${w} ${h}`).attr('preserveAspectRatio', `xMinYMin meet`);
     let scales = {};
     let windGlyphs = [];
     let isSimulating = false;
@@ -272,7 +272,7 @@ let StreamlineGraph = function (options) {
             let rotationAngle = windData[0].direction;
             console.log("Updating wind");
             for (let arrow of windGlyphs) {
-                arrow.glyph.attr('transform', `${arrow.transformation} rotate(${rotationAngle})`).classed('hide',false);
+                arrow.glyph.attr('transform', `${arrow.transformation} rotate(${rotationAngle+180})`).classed('hide',false);
             }
             if (windData.length > 1) {
                 d3.select('#wind-indicator').text("Multiple wind readings found for current time stamp. Using first reading.");

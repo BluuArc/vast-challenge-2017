@@ -4,6 +4,7 @@ let Challenge2 = function(options){
     let self = this;
     self.data = {};
     self.streamLineMap = new StreamlineGraph(options);
+    self.timeSlider = new TimeSlider(options);
     self.osp = [];
     self.windModeIndex = 0;
     let verbose = options.verbose || false;
@@ -21,6 +22,7 @@ let Challenge2 = function(options){
     function init(){
         return loadData().then(function(){
             loadStreamlineMap();
+            loadBrushSlider();
             // loadOSPs();
 
             //populate interpolation dropdown
@@ -74,7 +76,7 @@ let Challenge2 = function(options){
 
         //convert the cardinal angle of the wind data to an angle relative to the x axis
         function getAngleRelativeToX(degrees) {
-            return 360 - degrees + 90;
+            return 360 - degrees + 90+180;
         }
 
         //based off of https://stackoverflow.com/questions/9705123/how-can-i-get-sin-cos-and-tan-to-use-degrees-instead-of-radians
@@ -354,8 +356,21 @@ let Challenge2 = function(options){
                 'AGOC-3A': self.data.chemical._statistics['AGOC-3A'].scale,
                 wind: self.data.wind._statistics.scale
             }
-        }
+        };
         self.streamLineMap.init(options);
+    }
+
+    function loadBrushSlider(){
+        let options = {
+            scales: {
+                Appluimonia: self.data.chemical._statistics.Appluimonia.scale,
+                Chlorodinine: self.data.chemical._statistics.Chlorodinine.scale,
+                Methylosmolene: self.data.chemical._statistics.Methylosmolene.scale,
+                'AGOC-3A': self.data.chemical._statistics['AGOC-3A'].scale,
+                wind: self.data.wind._statistics.scale
+            }
+        };
+        // self.timeSlider.init(options);
     }
 
     function convertDateToTimeStamp(date){
@@ -525,6 +540,7 @@ let Challenge2 = function(options){
                         if (verbose) console.log("Possibly erroneous delta value");
                     }
                 }
+                //entries witth 0 or more than 1 remain NaN
             }
         }
     }
