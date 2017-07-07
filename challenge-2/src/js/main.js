@@ -571,12 +571,12 @@ let Challenge2 = function(options){
         if(verbose) console.log("Loaded OSPs");
     }
 
-    self.startSimulation = function(index, time_stamp){
+    self.startSimulation = function(index, time_stamp,diffusionRate){
         self.windModeIndex = index;
         isSimulating = true;
         // getWindDataAtTimeStamp(time_stamp);
         if(verbose) console.log("Interpolation mode", windModes[index]);
-        self.streamLineMap.setSimulationMode(true,getDataAtTimeStamp(time_stamp),time_stamp);
+        self.streamLineMap.setSimulationMode(true,getDataAtTimeStamp(time_stamp),time_stamp,diffusionRate);
     }
 
     self.stopSimulation = function(){

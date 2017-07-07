@@ -19,45 +19,85 @@
 </head>
 
 <body style="background-color:#DDDDDD">
-    <div class="tooltip"></div>
+    <div class="tooltip" id="vis"></div>
     <div class="container-fluid">
-        
+        <!--Main Slider-->
         <div class="row">
-            <div class="col-sm-6 main-column" id="overview">
+            <input id="timestamp-slider" type="range" value="0" style="max-width: 98%; margin:1%; height:20px; -webkit-appearance:none;"/>
+            <div id="input-disabler"></div>
+        </div>
+        <!--Controls and Info-->
+        <div class="row">
+            <!--Time Range Info-->
+            <div class="col-md-4">
+                <p class="col-md-6"><b>Time Range Start:</b> <span id="time-range-start">some date</span></p>
+                <p class="col-md-6"><b>Time Range End:</b> <span id="time-range-end">some other date</span></p>
+            </div>
+            <!--Time Step Controls-->
+            <div class="col-md-4" style="text-align:center;">
+                <p class="row" class="control-label"><b>Current Time Stamp:</b></p>
+                <p id="current-time-stamp" class="row">slider</p>
+                <p class="row control-label"><b>Time Step Controls</b> <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" title="The number in the box defines the number of hours to jump when clicking the arrows"></span></p>
+                <div id="step-buttons" class="row">
+                    <button onclick="changeTime(-1)" class="btn btn-primary"><span class="glyphicon glyphicon-chevron-left"></button>
+                    <input id="time-step-size" type="number" min="0" max="48" value="1" style="max-width:10%; min-width: 10px; text-align:center;">
+                    <button onclick="changeTime(1)" class="btn btn-primary"><span class="glyphicon glyphicon-chevron-right"></span></button>
+                </div>
+            </div>
+            <!--Streamline Map Controls-->
+            <div class="col-md-4">
+                <p class="row"><b>Streamline Graph Controls</b> <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="right" title="If the simulation is started, the streamlines from each factory are calculated at every time step based on the current configuration"></span></p>
+                <button onclick="toggleSimulation()" id="simToggle" style="margin: 0;" class="row btn btn-block btn-lg btn-primary">Click to Start the Simulation of Chemical Streamlines</button>
+                <div class="row">
+                    <!--Interpolation Method-->
+                    <div class="col-md-2" style="text-align:center;">
+                        <p class="control-label" style="margin:0;">Interpolation Method:</p>
+                    </div>
+                    <div class="col-md-10">
+                        <div id="interpolation-method" class="btn-group-justified" data-toggle="buttons">
+                            <label class="btn btn-primary active">
+                                <input type="radio" name="interpolation-options" value="0" autocomplete="off" checked>Last
+                            </label>
+                            <label class="btn btn-primary">
+                                <input type="radio" name="interpolation-options" value="1" autocomplete="off">Next
+                            </label>
+                            <label class="btn btn-primary">
+                                <input type="radio" name="interpolation-options" value="2" autocomplete="off">Closest
+                            </label>
+                            <label class="btn btn-primary">
+                                <input type="radio" name="interpolation-options" value="3" autocomplete="off">Interpolate
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div clas="row">
+                    <div class="col-md-2" style="text-align:center">
+                        <p class="control-label">Diffusion Rate (mph):</p>
+                    </div>
+                    <div class="col-md-2">
+                        <input id="diffusion-rate" type="number" min="0" max="1" value="0.05" step="0.001" style="text-align:center;">
+                    </div>
+                    <div class="col-md-8">
+                        <div class="row">
+                            <div class="col-sm-4" style="text-align:center">Using wind data from:</div>
+                            <div class="col-sm-8" id="wind-indicator" style="text-align:center;">---</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <!--Visualizations-->
+        <div class="row">
+            <div class="col-sm-6 main-column" id="overview" style="border: 1px solid gray;">
                 overview
             </div>
             <div class="col-sm-6 main-column" id="simulation-map">
-                <div class="row" style="border: 1px solid gray;">
-                    <div class="svg-container" id="streamline-graph">
-                    </div>
-                </div>
-                <div class="row" id="simulation-controls">
-                    <button id="simToggle" onclick="toggleSimulation()" class="col-sm-6 btn btn-lg btn-primary">Click to Start Simulating Chemical Streamlines</button>
-                    <div class="col-sm-3" style="vertical-align:middle;"><p style="text-align:right;">Interpolation Mode:</p></div>
-                    <div class="col-sm-3 dropdown" style="text-align:center;">
-                        <!--<div class="dropdown">-->
-                            <button id="interpolation-mode" class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" value="0">Filler Text
-                        <span class="caret"></span></button>
-                            <ul class="dropdown-menu" id="interpolation-mode-options">
-                            </ul>
-                        <!--</div>-->
-                    </div>
-                </div>  
-                <div class="row" style="text-align:center">
-                    <div class="col-sm-4">Using wind data from:</div>
-                    <div class="col-sm-8" id="wind-indicator">---</div>
+                <div class="svg-container" id="streamline-graph" style="border: 1px solid gray; background-color:white">
                 </div>
             </div>
         </div>
-        <div class="row">
-            <input id="timestamp-slider" type="range" value="0" style="max-width: 90%;margin-left:5%;"/>
-            <p id="current-time-stamp" style="text-align:center;">slider</p>
-            <div id="step-buttons" style="text-align:center">
-                <button onclick="changeTime(-1)" class="btn btn-primary"><span class="glyphicon glyphicon-chevron-left"></button>
-                <input id="time-step-size" type="number" min="0" max="48" value="1" style="max-width:5%; min-width: 10px; text-align:center;">
-                <button onclick="changeTime(1)" class="btn btn-primary"><span class="glyphicon glyphicon-chevron-right"></span></button>
-            </div>
-        </div>
+        
     </div>
     <div id="loading-indicator" class="loading"></div>
     <script>
@@ -123,7 +163,7 @@
             let dist_to_start = (start_index) ? (curValue - start_index) : 0;
             //ensure positive step size
             if(value < 1 /*|| value > 48*/ || (curValue+diff) >= timestamps.length ){
-                alert("Please enter a positive number no larger than the max");
+                alert(`Please enter a positive number no larger than ${timestamps.length-1-curValue}`);
                 d3.select('#time-step-size').node().value = 1;
                 return;
             }
@@ -138,42 +178,50 @@
 
         function toggleSimulation(){
             let toggle = d3.select('#simToggle');
-            if(toggle.classed('btn-primary')){
-                toggle.classed('btn-primary',false);
-                toggle.classed('btn-warning',true);
-                toggle.text("Click to Stop Simulating Chemical Streamlines");
-                startSimulation();
-            }else{
-                toggle.classed('btn-primary', true);
-                toggle.classed('btn-warning', false);
-                toggle.text("Click to Start Simulating Chemical Streamlines");
-                stopSimulation();
+            try{
+                if(toggle.classed('btn-primary')){
+                    startSimulation();
+                    toggle.classed('btn-primary',false);
+                    toggle.classed('btn-warning',true);
+                    toggle.text("Click to Stop Simulating Chemical Streamlines");
+                }else{
+                    toggle.classed('btn-primary', true);
+                    toggle.classed('btn-warning', false);
+                    toggle.text("Click to Start Simulating Chemical Streamlines");
+                    stopSimulation();
+                }
+            }catch(err){
+                alert(`${err}`);
             }
         }
 
         function startSimulation(){
-            // d3.select('#simStart').attr('disabled',true);
-            // d3.select('#simEnd').attr('disabled',null);
-            timestamp_slider.attr('disabled',true);
+            let diffusionRate = +(d3.select('#diffusion-rate').node().value);
+            if(isNaN(diffusionRate) || diffusionRate < 0){
+                throw new Error("Please enter a valid positive diffusion rate.");
+            }
+
+            timestamp_slider.classed('disabled',true);
 
             start_index = +(timestamp_slider.node().value);
 
-            let interpolation_dropdown = d3.select('#interpolation-mode');
-            interpolation_dropdown.attr('disabled', true);
-            console.log("dropdown value",interpolation_dropdown.attr('value'))
-            challenge2.startSimulation(interpolation_dropdown.attr('value'),timestamps[timestamp_slider.node().value]);
+
+            let interpolation_dropdown = d3.select('#interpolation-method');
+            interpolation_dropdown.classed('disabled', true).attr('disabled',true);
+            d3.select('#diffusion-rate').classed('disabled',true).attr('disabled',true);
+            console.log("interpolation value",d3.select('input[name="interpolation-options"]:checked').node().value)
+            challenge2.startSimulation(d3.select('input[name="interpolation-options"]:checked').node().value,timestamps[timestamp_slider.node().value],diffusionRate);
             updateStreamLine();
         }
 
         function stopSimulation(){
-            // d3.select('#simStart').attr('disabled',null);
-            // d3.select('#simEnd').attr('disabled',true);
-            timestamp_slider.attr('disabled',null);
+            timestamp_slider.classed('disabled',false);
 
             start_index = undefined;
 
-            let interpolation_dropdown = d3.select('#interpolation-mode');
-            interpolation_dropdown.attr('disabled', null);
+            let interpolation_dropdown = d3.select('#interpolation-method');
+            interpolation_dropdown.classed('disabled', false).attr('disabled',null);
+            d3.select('#diffusion-rate').classed('disabled',false).attr('disabled',null);
             challenge2.stopSimulation();
             updateStreamLine();
         }
@@ -187,6 +235,7 @@
             timestamp_slider.on('input',updateStreamLine);
             updateStreamLine(); //set streamline graph to show data for first timestamp
             old_val = timestamp_slider.node().value;
+            $('[data-toggle="tooltip"]').tooltip(); 
             console.log("Ready");
             endWait();
         }); 

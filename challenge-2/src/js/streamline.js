@@ -206,11 +206,19 @@ let StreamlineGraph = function (options) {
         });
     }
 
-    self.setSimulationMode = function(bool,data,time_stamp){
+    self.setSimulationMode = function(bool,data,time_stamp,diffusionRate){
         isSimulating = bool;
 
         windVectors = [];
         timeStamps = [];
+
+        if(isSimulating){
+            if(!isNaN(diffusionRate) && diffusionRate >= 0){
+                diffusion_rate = diffusionRate;
+            }else{
+                alert("Please enter a valid diffusion rate. Using old diffusion_rate value",diffusion_rate);
+            }
+        }
 
         for(let arrow of windGlyphs){
             arrow.glyph.classed('hide',bool !== true);

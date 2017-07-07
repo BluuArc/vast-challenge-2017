@@ -6,7 +6,7 @@ var Tooltip = function(){
 
     self.showAt = function(x,y){
         // console.log('received coords',x,y);
-        let div = d3.select('div.tooltip');
+        let div = d3.select('div.tooltip#vis');
         div.style('opacity', 1)
             .style('left', `${x+15}px`)
             .style('top',  `${y-35}px`);

@@ -6,7 +6,7 @@
 .svg-container {
     /*display: inline-block;*/
     position: relative;
-    width: 90%;
+    /*width: 90%;*/
     /*padding-bottom: 90%;*/
     vertical-align: middle;
     overflow: hidden;
@@ -163,7 +163,7 @@ g.axis {
     /*fill: white;*/
 }
 
-div.tooltip {
+div.tooltip#vis {
     position: absolute;
     text-align: left;
     padding: 2px;
@@ -208,4 +208,14 @@ line.wind-glyph.hide {
     opacity: 0;
     pointer-events: none;
     cursor: wait;
+}
+
+.disabled {
+    pointer-events: none;
+    cursor: not-allowed;
+    filter: brightness(75%);
+}
+
+p.control-label {
+    display: inline-block;
 }
