@@ -55,7 +55,7 @@ let TimeSlider = function(options){
             .domain([new Date(2016, 7, 1), new Date(new Date(2016, 8, 1) - 1)])
             .range([(w/3)-padding, (2*w/3)-padding]);
         monthScales['December 2016'] = d3.scaleTime()
-            .domain([new Date(2016,11,1), new Date(new Date(2016,0,1)-1)])
+            .domain([new Date(2016,11,1), new Date(new Date(2017,0,1)-1)])
             .range([(2*w/3)-padding,(w-padding)]);
 
         scales.monthScales = monthScales;
@@ -83,7 +83,27 @@ let TimeSlider = function(options){
             .attr('d',line);
         
         self.changeChemical(selectedChemical);
-        
+
+        //create horizontal axes
+        for(let m in monthScales){
+            // let m = 'April 2016';
+            axes[m] = d3.axisBottom(monthScales[m])
+                .ticks(d3.timeWeek)
+                .tickPadding(0);
+            svg.append('g')
+                .classed('axis',true)
+                .classed('axis-grid',true)
+                .attr('transform',`translate(0,${h-padding})`)
+                .call(axes[m])
+                // .selectAll('tick')
+        }
+        let monthDividers = [(w/3)-padding,(w/3)-padding,(2*w/3)-padding];
+        for(let m of monthDividers){
+            svg.append('path')
+                .classed('month-divider',true)
+                .datum([new Vector(m,padding),new Vector(m,h-padding)])
+                .attr('d',line);
+        }
     };
 
     self.changeChemical = (newChemical) => {
@@ -105,7 +125,7 @@ let TimeSlider = function(options){
             .call(axes[selectedChemical]);
     };
 
-    self.update = (data) => {
+    self.plotDeltas = (data) => {
 
     };
 
