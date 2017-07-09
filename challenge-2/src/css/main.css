@@ -1,3 +1,7 @@
+* {
+    font-size: 0.75vw;
+}
+
 .container-fluid {
     width: 100%;
 }
@@ -181,17 +185,18 @@ div.tooltip#vis {
     position: absolute;
     text-align: left;
     padding: 2px;
-    font: 1vw sans-serif bold;
+    font-size: 1vw;
     background: #E5E5E5;
     border: 1px solid gray;
     border-radius: 8px;
     pointer-events: none;
 }
 
+
 .wind-glyph,line.wind-glyph {
     fill: gray;
     stroke: none;
-    opacity: 0.40;
+    opacity: 0.75;
 }
 
 .wind-glyph.hide,

@@ -68,21 +68,6 @@ let StreamlineGraph = function (options) {
             .attr('cy', y);
     }
 
-    //empty message removes events
-    function setTooltipEvents(target,message){
-        if(!message || message.length === 0){
-            target.on('mouseenter', undefined)
-                .on('mouseleave', undefined);
-        }else{
-            target.on('mouseenter', function () {
-                tooltip.setContent(message);
-                tooltip.showAt(d3.event.pageX, d3.event.pageY);
-            }).on('mouseleave', function () {
-                tooltip.hide();
-            });
-        }
-    }
-
     //pixel refers to original 200x200 coordinates or zoomed in coordinates while SVG refers to SVG coordinates
     self.init = function(options){
         scales = options.scales || scales;
@@ -141,9 +126,20 @@ let StreamlineGraph = function (options) {
             factoryConstructor: (parent) => {
                 let curFactory = parent.append('circle').classed('factory', true)
                     .attr('r', (glyphSize*0.25) / 2).attr('style', 'fill:lightgray; stroke-width:3px;');
-                setTooltipEvents(curFactory, `<b>Factory Name Shows Up Here</b>`);
+                tooltip.setEvents(curFactory, `<b>Factory Name Shows Up Here</b>`);
                 return curFactory;
             },
+            windGlyphConstructor: (parent) => {
+                let curGlpyh = parent.append("line")
+                    .attr("x1", 0)
+                    .attr("y1", 1)
+                    .attr("x2", 0)
+                    .attr("y2", 0)
+                    .attr("marker-end", "url(#arrow)")
+                    // .attr('transform', defaultTransform)
+                    .classed('wind-glyph', true)
+                return curGlpyh;
+            }
         });
         legend.init();
     };
@@ -161,6 +157,15 @@ let StreamlineGraph = function (options) {
         svg.select('#arrow').append('path')
             .attr('d', 'M2,2 L10,6 L2,10 L6,6 L2,2')
             .classed('wind-glyph', true);
+
+        svg.append('line')
+            .attr("x1", 0)
+            .attr("y1", 1)
+            .attr("x2", 0)
+            .attr("y2", 0)
+            .attr("marker-end", "url(#arrow)")
+            .attr('transform', `translate(${w*0.9},${h*0.1}) scale(2)`)
+            .classed('wind-glyph', true)//.classed('hide', true);
 
         let group = svg.append('g');
 
@@ -198,7 +203,7 @@ let StreamlineGraph = function (options) {
             curFactory = curFactory.append('circle').classed('factory',true)
                 .attr('r', offset / 2).classed(`${d.id}`,true)
                 .attr('cx', location.x).attr('cy', location.y).attr('style','fill:lightgray; stroke-width:3px;');
-            setTooltipEvents(curFactory, `<b>${d.name}</b>`);
+            tooltip.setEvents(curFactory, `<b>${d.name}</b>`);
             factories[i].domElement = curFactory;
         });
     }
@@ -451,7 +456,7 @@ let StreamlineGraph = function (options) {
                 .attr('id', `${factory.id}-streamline`)
                 .attr('r', 3)
                 .attr('style', 'opacity:0.75;')
-            setTooltipEvents(curPoint, `<b class=${factory.id}>${factory.name}</b><br>${timeStamps[points.length - p] || cur_time_stamp}`);
+            tooltip.setEvents(curPoint, `<b class=${factory.id}>${factory.name}</b><br>${timeStamps[points.length - p] || cur_time_stamp}`);
         }
     }
 
@@ -461,7 +466,7 @@ let StreamlineGraph = function (options) {
             .datum(points).attr('d',line).attr('style','fill: none; pointer-events:none;');
         let path = svg.append('path').attr('id', `${factory.id}-streamline-mouseover`).classed(`${factory.id}`, true).classed(`diffusion-mouseover`, true)
             .datum(points).attr('d', line);
-        setTooltipEvents(path,`${factory.name}`);
+        tooltip.setEvents(path,`${factory.name}`);
     }
 
     function drawDiffusionPath(factory,points){
@@ -516,21 +521,6 @@ let PixelSensor = function(parent,position,sensorNumber, options){
             domElement: undefined
         },
     };
-
-    //empty message removes events
-    function setTooltipEvents(target, message) {
-        if (!message || message.length === 0) {
-            target.on('mouseenter', undefined)
-                .on('mouseleave', undefined);
-        } else {
-            target.on('mouseenter', function () {
-                tooltip.setContent(message);
-                tooltip.showAt(d3.event.pageX, d3.event.pageY);
-            }).on('mouseleave', function () {
-                tooltip.hide();
-            });
-        }
-    }
 
     function drawSensorLabelOverlay(){
         let axesCoords = {
@@ -638,10 +628,10 @@ let PixelSensor = function(parent,position,sensorNumber, options){
         //set error message
         if(error_messages.length > 0){
             console.log("Setting error messages");
-            setTooltipEvents(notificationBubble,error_messages.join("<br>"));
+            tooltip.setEvents(notificationBubble,error_messages.join("<br>"));
             notificationBubble.classed('error',true);
         }else{
-            setTooltipEvents(notificationBubble,"");
+            tooltip.setEvents(notificationBubble,"");
             notificationBubble.classed('error',false);
         }
 
@@ -685,23 +675,27 @@ let StreamlineLegend = function(parent,position,options){
     }
 
     self.init = function(){
-        drawPointAt(35,50);
+        // drawPointAt(35,40);
 
         let container = self.graph;
 
         container.append('text').text("Streamline Map Legend")
             .attr('x',w/2).attr('y',10).classed('legend-title',true);
-            // .attr('font-size','x-small').attr('text-anchor','middle')
-            // .attr('fill','black').attr('stroke','black');
 
         options.factoryConstructor(container).attr('cx',20).attr('cy',25);
         container.append('text').text('Factory Location').classed('legend-label',true)
-        .attr('x',35).attr('y',28);
+            .attr('x',35).attr('y',25+3);
+
+        options.windGlyphConstructor(container).attr('transform',`translate(20,40)`).style('opacity',1.0);
+        let windGlyphDescription = container.append('text').text('Wind Direction').classed('legend-label',true)
+            .attr('x',35).attr('y',40+3);
+        tooltip.setEvents(windGlyphDescription,"North is in the upward direction");
+        
         /*
         append('circle').classed('factory',true)
                 .attr('r', offset / 2).classed(`${d.id}`,true)
                 .attr('cx', location.x).attr('cy', location.y).attr('style','fill:lightgray; stroke-width:3px;');
-            setTooltipEvents(curFactory, `<b>${d.name}</b>`);
+            tooltip.setEvents(curFactory, `<b>${d.name}</b>`);
         */
     }
 }
