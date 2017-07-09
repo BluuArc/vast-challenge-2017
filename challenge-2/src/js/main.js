@@ -363,14 +363,14 @@ let Challenge2 = function(options){
     function loadBrushSlider(){
         let options = {
             scales: {
-                Appluimonia: self.data.chemical._statistics.Appluimonia.scale,
-                Chlorodinine: self.data.chemical._statistics.Chlorodinine.scale,
-                Methylosmolene: self.data.chemical._statistics.Methylosmolene.scale,
-                'AGOC-3A': self.data.chemical._statistics['AGOC-3A'].scale,
+                Appluimonia: self.data.delta._statistics.Appluimonia.scale,
+                Chlorodinine: self.data.delta._statistics.Chlorodinine.scale,
+                Methylosmolene: self.data.delta._statistics.Methylosmolene.scale,
+                'AGOC-3A': self.data.delta._statistics['AGOC-3A'].scale,
                 wind: self.data.wind._statistics.scale
             }
         };
-        // self.timeSlider.init(options);
+        self.timeSlider.init(options);
     }
 
     function convertDateToTimeStamp(date){

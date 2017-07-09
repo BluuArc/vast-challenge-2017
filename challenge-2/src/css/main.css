@@ -1,5 +1,5 @@
 * {
-    font-size: 0.75vw;
+    font-size: 0.85vw;
 }
 
 .container-fluid {
@@ -124,8 +124,9 @@ path, line {
 
 .axis-mouseover {
     /*stroke: none;*/
+    fill: gray;
     stroke-width: 10;
-    opacity: 0;
+    opacity: 0.0;
 }
 
 .chemical:hover {

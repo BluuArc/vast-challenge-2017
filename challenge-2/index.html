@@ -27,19 +27,19 @@
             <input id="timestamp-slider" type="range" value="0" style="max-width: 98%; margin:1%; height:20px; -webkit-appearance:none;"/>
             <div id="input-disabler"></div>
         </div>
-        <div class="row" style="display:none;">
+        <div class="row" style="/*display:none;*/">
             <div class="svg-container" id="timestamp-brush-slider" style="border: 1px solid gray; background-color:white; margin-left: 1%; margin-right: 1%;">
             </div>
         </div>
         <!--Controls and Info-->
         <div class="row">
             <!--Time Range Info-->
-            <div class="col-md-4">
+            <div class="col-md-5">
                 <p class="col-md-6"><b>Time Range Start:</b> <span id="time-range-start">some date</span></p>
                 <p class="col-md-6"><b>Time Range End:</b> <span id="time-range-end">some other date</span></p>
             </div>
             <!--Time Step Controls-->
-            <div class="col-md-4" style="text-align:center;">
+            <div class="col-md-2" style="text-align:center;">
                 <p class="row" class="control-label"><b>Current Time Stamp:</b></p>
                 <p id="current-time-stamp" class="row">slider</p>
                 <p class="row control-label"><b>Time Step Controls</b> <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" title="The number in the box defines the number of hours to jump when clicking the arrows"></span></p>
@@ -50,7 +50,7 @@
                 </div>
             </div>
             <!--Streamline Map Controls-->
-            <div class="col-md-4">
+            <div class="col-md-5">
                 <p class="row"><b>Streamline Graph Controls</b> <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="right" title="If the simulation is started, the streamlines from each factory are calculated at every time step based on the current configuration"></span></p>
                 <button onclick="toggleSimulation()" id="simToggle" style="margin: 0;" class="row btn btn-block btn-lg btn-primary">Click to Start the Simulation of Chemical Streamlines</button>
                 <div class="row">
