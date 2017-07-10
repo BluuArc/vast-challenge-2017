@@ -33,6 +33,14 @@ let TimeSlider = function(options){
             .attr('cy', y);
     }
 
+    function updateTimeRange(start,end){
+        function convertDateToTimeStamp(date) {
+            return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear() % 1000} ${date.getHours()}:00`;
+        }
+        d3.select('#time-range-start').text(convertDateToTimeStamp(start));
+        d3.select('#time-range-end').text(convertDateToTimeStamp(end));
+    }
+
     self.init = function(options){
         // options = options || {};
         // let optionScales = options.scales || {
@@ -81,7 +89,7 @@ let TimeSlider = function(options){
 
         //based on https://bl.ocks.org/mbostock/6232537
         drawAxes();
-        drawBrush();
+        drawRangeBrush();
     };
 
     function drawAxes(){
@@ -149,43 +157,61 @@ let TimeSlider = function(options){
         
     }
 
-    function drawBrush(){
+    function drawRangeBrush(){
         function brushended(){
             if (!d3.event.sourceEvent) return; // Only transition after input.
             if (!d3.event.selection) return; // Ignore empty selections.
             let brushRange;
-            let monthScales = scales.monthScales;
-            let targetScale;
+            let left,right;
+            let monthScales = Object.keys(scales.monthScales);
+            let targetScale, prevScale;
             //get correct scale
-            for(let m in monthScales){
+            for(let m of monthScales){
                 brushRange = d3.event.selection.map(scales.monthScales[m].invert);
-                let monthRange = monthScales[m].domain();
-                if(brushRange[1] < monthRange[1]){
-                    targetMonth = monthRange[0].getMonth();
-                    targetScale = monthScales[m];
+                let monthRange = scales.monthScales[m].domain();
+                if(brushRange[0] < monthRange[1] && !left){
+                    left = brushRange[0];
+                }
+                if(brushRange[1] < monthRange[1] && !right){
+                    right = brushRange[1];
+                }
+                if(left && right){
+                    targetScale = scales.monthScales[m];
                     break;
                 }
+                prevScale = scales.monthScales[m];
             }
-            console.log(brushRange);
-            // let d1 = brushRange.map(d3.timeMonth.round);
+            if(verbose) console.log("initial",brushRange);
 
-            let left = brushRange[0].getMonth();
-            let right = brushRange[1].getMonth();
-            console.log(left,right,targetMonth);
-
-            //if not in same month, snap to the target month
-            if(left !== right){                
-                brushRange[0] = d3.timeMonth.floor(brushRange[1]);
-                brushRange[1] = d3.timeDay.offset(brushRange[0]);
+            //snap to closest 12 hour
+            brushRange[0] = d3.timeHour.floor(brushRange[0]);
+            let next12 = d3.timeHour.offset(brushRange[0],12);
+            let rightFloor = d3.timeHour.floor(brushRange[1]);
+            if (rightFloor < next12) { //selection is less than 12 hours
+                brushRange[1] = next12;
+            } else {
+                brushRange[1] = d3.timeHour.floor(brushRange[1]);
             }
-            console.log(brushRange);
+            if(verbose) console.log("After hour rounding",brushRange);
 
-
-            // If empty when rounded, use floor & ceil instead.
-            // if (d1[0] >= d1[1]) {
-            //     d1[0] = d3.timeMonth.floor(d0[0]);
-            //     d1[1] = d3.timeMonth.offset(d1[0]);
-            // }
+            //if not in same month, snap to the month with largest diff
+            if(left.getMonth() !== right.getMonth()){                
+                //diffs are distances to edges of month
+                let leftDiff = Math.abs(left.getDate() - d3.timeDay.offset(d3.timeMonth.floor(left), -1).getDate());
+                let rightDiff = right.getDate();
+                if(verbose) console.log(left, right, leftDiff, rightDiff);
+                if(rightDiff > leftDiff){//snap to beginning of right
+                    brushRange[0] = d3.timeMonth.floor(right);
+                    brushRange[1] = d3.timeDay.offset(brushRange[0]);
+                }else{//snap to end of left
+                    targetScale = prevScale;
+                    let nextMonth = d3.timeMonth.offset(d3.timeMonth.floor(left));
+                    brushRange[1] = d3.timeHour.offset(nextMonth,-1);
+                    brushRange[0] = d3.timeDay.offset(nextMonth,-1);
+                }
+            }
+            if(verbose) console.log("After month rounding",brushRange);
+            updateTimeRange(brushRange[0],brushRange[1]);
 
             d3.select(this).transition().call(d3.event.target.move, brushRange.map(targetScale));
         }
