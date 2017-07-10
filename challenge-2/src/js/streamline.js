@@ -32,6 +32,9 @@ let StreamlineGraph = function (options) {
     let windVectors = [], timeStamps = [];
     let diffusion_rate = 0.005;
     let verbose = options.verbose || false;
+    let sensorClickHandler = options.sensorClickHandler || ((sensorName) => {
+        console.log("clicked",sensorName);
+    });
 
     let line = d3.line()
         .x((d) => { return d.x; }).y((d) => {return d.y; })
@@ -222,7 +225,8 @@ let StreamlineGraph = function (options) {
             };
             sensors[i].object = new PixelSensor(curSensor,location,d.name,{
                 scales: scales,
-                quadrantSize: glyphSize/2
+                quadrantSize: glyphSize/2,
+                sensorClickHandler: sensorClickHandler
             });
 
             sensors[i].object.init();
@@ -551,7 +555,10 @@ let PixelSensor = function(parent,position,sensorNumber, options){
             .attr('alignment-baseline', 'middle');
         notificationBubble = self.graph.append('circle').classed('sensor-label-mouseover', true)
             .attr('cx', center.x).attr('cy', center.y)
-            .attr('r', quadrantSize * 0.25);
+            .attr('r', quadrantSize * 0.25)
+            .on('click',function(){
+                options.sensorClickHandler(`sensor${sensorNumber}`);
+            });
     }
 
     function setSensorMouseOver(sensorElement){

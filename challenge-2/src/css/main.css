@@ -169,7 +169,26 @@ path, line {
 .sensor-label-mouseover.error {
     stroke: red;
     fill: red;
-    opacity: 0.5
+    opacity: 0.5;
+}
+
+.diffusion-notification {
+    stroke: red;
+    opacity: 0.1;
+    stroke-linecap: round;
+}
+
+.diffusion-line {
+    stroke: black;
+    opacity: 1;
+}
+
+.diffusion-line.disabled {
+    stroke: grey;
+    opacity: 0.1;
+}
+.diffusion-notification.disabled {
+    opacity: 0;
 }
 
 .axis text,
@@ -200,8 +219,7 @@ div.tooltip#vis {
     opacity: 0.75;
 }
 
-.wind-glyph.hide,
-line.wind-glyph.hide {
+.wind-glyph.hide,line.wind-glyph.hide {
     opacity: 0;
 }
 

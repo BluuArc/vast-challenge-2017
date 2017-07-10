@@ -3,8 +3,6 @@ let Challenge2 = function(options){
     options = options || {};
     let self = this;
     self.data = {};
-    self.streamLineMap = new StreamlineGraph(options);
-    self.timeSlider = new TimeSlider(options);
     self.osp = [];
     self.windModeIndex = 0;
     let verbose = options.verbose || false;
@@ -22,6 +20,11 @@ let Challenge2 = function(options){
     let jumpToTimeStamp = options.jumpToTimeStamp;
 
     function init(){
+        options.sensorClickHandler = (sensorName) => {
+            self.updateTimeSlider(undefined, sensorName, undefined);
+        }
+        self.streamLineMap = new StreamlineGraph(options);
+        self.timeSlider = new TimeSlider(options);
         return loadData().then(function(){
             loadStreamlineMap();
             loadBrushSlider();
@@ -357,7 +360,7 @@ let Challenge2 = function(options){
                 Methylosmolene: self.data.chemical._statistics.Methylosmolene.scale,
                 'AGOC-3A': self.data.chemical._statistics['AGOC-3A'].scale,
                 wind: self.data.wind._statistics.scale
-            }
+            },
         };
         self.streamLineMap.init(options);
     }
@@ -576,9 +579,12 @@ let Challenge2 = function(options){
     self.updateStreamLine = updateStreamLine;
 
     function updateTimeSlider(time_stamp,sensor,chemical){
-        if(verbose) console.log("Entered updateTimeSlider",time_stamp,chemical);
+        if(verbose) console.log("Entered updateTimeSlider",time_stamp,sensor,chemical);
         if(time_stamp){
             self.timeSlider.updateTimeStamp(time_stamp);
+        }
+        if(sensor || chemical){
+            self.timeSlider.drawChemicalDelta(chemical,sensor,self.data.delta);
         }
         // self.timeSlider.update(time_stamp,sensor,chemical);
     }

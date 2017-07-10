@@ -113,7 +113,8 @@
             verbose: true,
             jumpToTimeStamp: jumpToTimeStamp
         };
-        let selectedChemical = 'Appluimonia',selectedSensor = 'sensor1';
+        let selectedChemical = 'AGOC-3A';
+        let selectedSensor = 'sensor1';
 
         function startWait(){
             d3.select('#loading-indicator').classed('loading',true);
@@ -269,7 +270,7 @@
             timestamp_slider.attr('max',timestamps.length-1);
             timestamp_slider.on('input',updateStreamLine);
             updateStreamLine(); //set streamline graph to show data for first timestamp
-            challenge2.drawDelta(selectedChemical,selectedSensor);
+            challenge2.updateTimeSlider(undefined,selectedSensor,selectedChemical);
             old_val = timestamp_slider.node().value;
             $('[data-toggle="tooltip"]').tooltip(); 
             console.log("Ready");

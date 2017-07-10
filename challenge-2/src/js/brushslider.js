@@ -75,13 +75,19 @@ let TimeSlider = function(options){
         for(let c of chemical_names){
             let [min,max] = options.scales[c].domain();
             let globalMax = Math.max(Math.abs(max),Math.abs(min)); //get value furthest from 0 for uniform vertical scaling
-            scales[c] = d3.scaleLinear().domain([globalMax,globalMax]).range(svgRange.y);
+            scales[c] = d3.scaleLinear().domain([globalMax,-globalMax]).range(svgRange.y);
             // console.log(c,[min,max],scales[c].domain());
         }
 
         //used for debugging positions
-        scales.verticalScale = d3.scaleLinear().domain([-1,1]).range(svgRange.y);
+        scales.verticalScale = d3.scaleLinear().domain([1,-1]).range(svgRange.y);
         scales.horizontalScale = d3.scaleLinear().domain([0,3]).range(svgRange.x);
+
+        for(let s in scales){
+            if(typeof scales[s] === "function"){
+                console.log(s,scales[s].domain(),scales[s].range());
+            }
+        }
 
         //draw background
         svg.append('rect').classed('slider-background',true)
@@ -99,7 +105,7 @@ let TimeSlider = function(options){
 
         //create vertical axes
         for (let c of chemical_names) {
-            axes[c] = d3.axisLeft(scales[c]).ticks(3);
+            axes[c] = d3.axisLeft(scales[c]).ticks(3).tickFormat(() => { return null; });
         }
 
         //draw 0 line
@@ -326,10 +332,91 @@ let TimeSlider = function(options){
     //     }
     // };
 
-    self.drawChemicalDelta = (chemical,data) => {
-        selectedChemical = chemical;
+    self.drawChemicalDelta = (chemical,sensor,data) => {
+        // selectedChemical = chemical;
+        // selectedSensor = sensor;
+        console.log("received",chemical,sensor,data);
 
-        console.log("received",chemical,data);
+        if(chemical && chemical !== selectedChemical){
+            selectedChemical = chemical
+
+            let paths = {};
+            for(let i = 1; i <= 9; ++i){
+                paths[`sensor${i}`] = [];
+                paths[`sensor${i}-NaN`] = [];
+            }
+
+            //generate path data
+            for(let t in data){
+                if(new Date(t) != "Invalid Date"){
+                    for(let s in data[t]){
+                        //get data point relative to SVG coordinates
+                        let reading = data[t][s][selectedChemical];
+                        let timestamp = (function(t){
+                            let scale, date = new Date(t);
+                            for(let m in scales.monthScales){
+                                let monthRange = scales.monthScales[m].domain();
+                                scale = scales.monthScales[m];
+                                if(date < monthRange[1]){
+                                    break;
+                                }
+                            }
+                            return scale(date);
+                        })(t);
+                        let dataPoint = {
+                            scaledReading: scales[selectedChemical](reading),
+                            scaledTimestamp: timestamp,
+                            reading: reading,
+                            timestamp: t
+                        }
+                        if(!isNaN(reading)){
+                            paths[s].push(dataPoint);
+                        }else{
+                            paths[`${s}-NaN`].push(dataPoint);
+                        }
+                    }
+                }
+            }
+
+            //remove old points and paths
+            svg.selectAll('.diffusion-line').remove();
+            svg.selectAll('.diffusion-notification').remove();
+
+            //plot points
+            for(let p in paths){
+                //plot erroneous points
+                if(p.indexOf("NaN") > -1){
+                    let max = scales.verticalScale(1);
+                    for(let dataPoint of paths[p]){
+                        // let point = drawPointAt(dataPoint.scaledTimestamp,max).attr('r',1)
+                        let sensorName = p.replace("-NaN","");
+                        let notification = svg.append('path').classed('diffusion-notification',true).attr('id',sensorName)
+                            .datum([new Vector(dataPoint.scaledTimestamp,padding*0.9),new Vector(dataPoint.scaledTimestamp,h-padding)])
+                            .attr('d',line).classed('disabled', sensorName !== selectedSensor);
+                        tooltip.setEvents(notification,`${p.replace("-NaN","")} has a NaN reading at ${dataPoint.timestamp}`);
+                    }
+                }else{
+                    //plot path data
+                    let dataPoints = paths[p].map((d) => { 
+                        return new Vector(d.scaledTimestamp, d.scaledReading); 
+                    });
+
+                    let path = svg.append('path').datum(dataPoints)
+                        .classed('diffusion-line',true).classed('disabled',p !== selectedSensor)
+                        .attr('id',p)
+                        .attr('d',line);
+                }
+            }
+
+            console.log(paths);
+        }
+        if (sensor && sensor !== selectedSensor) {
+            selectedSensor = sensor;
+            svg.selectAll('.diffusion-notification').classed('disabled',true);
+            svg.selectAll('.diffusion-line').classed('disabled',true);
+            svg.selectAll(`#${selectedSensor}`).classed('disabled',false).raise();
+        }
+
     }
 
     self.updateTimeStamp = (time_stamp) => {
