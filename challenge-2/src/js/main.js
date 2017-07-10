@@ -23,6 +23,9 @@ let Challenge2 = function(options){
         options.sensorClickHandler = (sensorName) => {
             self.updateTimeSlider(undefined, sensorName, undefined);
         }
+        options.chemicalClickHandler = (chemicalName,sensorName) => {
+            self.updateTimeSlider(undefined,sensorName,chemicalName);
+        }
         self.streamLineMap = new StreamlineGraph(options);
         self.timeSlider = new TimeSlider(options);
         return loadData().then(function(){

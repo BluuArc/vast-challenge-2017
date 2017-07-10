@@ -35,6 +35,9 @@ let StreamlineGraph = function (options) {
     let sensorClickHandler = options.sensorClickHandler || ((sensorName) => {
         console.log("clicked",sensorName);
     });
+    let chemicalClickHandler = options.chemicalClickHandler || ((chemicalName,sensorName) => {
+        console.log(`clicked on ${chemicalName} of`, sensorName);
+    });
 
     let line = d3.line()
         .x((d) => { return d.x; }).y((d) => {return d.y; })
@@ -226,7 +229,8 @@ let StreamlineGraph = function (options) {
             sensors[i].object = new PixelSensor(curSensor,location,d.name,{
                 scales: scales,
                 quadrantSize: glyphSize/2,
-                sensorClickHandler: sensorClickHandler
+                sensorClickHandler: sensorClickHandler,
+                chemicalClickHandler: chemicalClickHandler
             });
 
             sensors[i].object.init();
@@ -574,6 +578,8 @@ let PixelSensor = function(parent,position,sensorNumber, options){
             tooltip.showAt(d3.event.pageX,d3.event.pageY);
         }).on('mouseleave',function(){
             tooltip.hide();
+        }).on('click',function(){
+            options.chemicalClickHandler(d3.select(this).attr('id'),`sensor${sensorNumber}`);
         });
     }
 
@@ -589,7 +595,9 @@ let PixelSensor = function(parent,position,sensorNumber, options){
         for(let c in chemicals){
             self.graph.append('rect').attr('width',quadrantSize).attr('height',quadrantSize)
                 .attr('x',chemicals[c].position[0]).attr('y',chemicals[c].position[1])
-                .classed(`${c}`,true).classed('chemical',true).attr('id',`${c}`);
+                .classed(`${c}`,true).classed('chemical',true).attr('id',`${c}`)
+                .on('click',function(){
+                });
             chemicals[c].domElement = self.graph.select(`.${c}`);
             setSensorMouseOver(chemicals[c].domElement);
         }
