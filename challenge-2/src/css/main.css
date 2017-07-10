@@ -257,3 +257,11 @@ text.legend-label {
     fill: black;
     stroke: black;
 }
+
+.tick-minor {
+    opacity: 0.5;
+}
+
+.slider-background {
+    fill: #EEEEEE;
+}
