@@ -72,15 +72,16 @@ let TimeSlider = function(options){
 
         //used for debugging positions
         scales.verticalScale = d3.scaleLinear().domain([-1,1]).range(svgRange.y);
+        scales.horizontalScale = d3.scaleLinear().domain([0,3]).range(svgRange.x);
 
         //draw background
         svg.append('rect').classed('slider-background',true)
             .attr('width',w-padding*2).attr('height',h-padding*2)
             .attr('x',padding).attr('y',padding);
 
-
+        //based on https://bl.ocks.org/mbostock/6232537
         drawAxes();
-        // drawBrush();
+        drawBrush();
     };
 
     function drawAxes(){
@@ -128,7 +129,6 @@ let TimeSlider = function(options){
             //         .tickFormat(() => { return null; }))
             //     .selectAll('.tick').classed('tick-minor', true);
             //draw monthly dividers
-            //based on https://bl.ocks.org/mbostock/6232537
             group.append('g')
                 .classed('axis', true).classed('grid', true)
                 .attr('transform', `translate(0,${h - padding})`)
@@ -147,6 +147,55 @@ let TimeSlider = function(options){
 
         }
         
+    }
+
+    function drawBrush(){
+        function brushended(){
+            if (!d3.event.sourceEvent) return; // Only transition after input.
+            if (!d3.event.selection) return; // Ignore empty selections.
+            let brushRange;
+            let monthScales = scales.monthScales;
+            let targetScale;
+            //get correct scale
+            for(let m in monthScales){
+                brushRange = d3.event.selection.map(scales.monthScales[m].invert);
+                let monthRange = monthScales[m].domain();
+                if(brushRange[1] < monthRange[1]){
+                    targetMonth = monthRange[0].getMonth();
+                    targetScale = monthScales[m];
+                    break;
+                }
+            }
+            console.log(brushRange);
+            // let d1 = brushRange.map(d3.timeMonth.round);
+
+            let left = brushRange[0].getMonth();
+            let right = brushRange[1].getMonth();
+            console.log(left,right,targetMonth);
+
+            //if not in same month, snap to the target month
+            if(left !== right){                
+                brushRange[0] = d3.timeMonth.floor(brushRange[1]);
+                brushRange[1] = d3.timeDay.offset(brushRange[0]);
+            }
+            console.log(brushRange);
+
+
+            // If empty when rounded, use floor & ceil instead.
+            // if (d1[0] >= d1[1]) {
+            //     d1[0] = d3.timeMonth.floor(d0[0]);
+            //     d1[1] = d3.timeMonth.offset(d1[0]);
+            // }
+
+            d3.select(this).transition().call(d3.event.target.move, brushRange.map(targetScale));
+        }
+        
+        let brush = d3.brushX()
+            .extent([[padding,padding],[w-padding,h-padding]])
+            .on('end',brushended);
+        svg.append('g')
+            .classed('brush',true)
+            .call(brush);
     }
 
     self.changeChemical = (newChemical) => {
