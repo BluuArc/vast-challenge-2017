@@ -108,11 +108,12 @@
     <script>
         let timestamps,timestamp_slider;
         let old_val;
-        let start_index;
+        let start_index,end_index;
         let options = {
             verbose: true,
             jumpToTimeStamp: jumpToTimeStamp
         };
+        let selectedChemical = 'Appluimonia',selectedSensor = 'sensor1';
 
         function startWait(){
             d3.select('#loading-indicator').classed('loading',true);
@@ -144,12 +145,14 @@
                             challenge2.updateStreamLine(timestamps[timestamp_slider.node().value], diff);
                         }
                         challenge2.updateStreamLine(timestamps[timestamp_slider.node().value], 0,true);
+                        challenge2.updateTimeSlider(timestamps[timestamp_slider.node().value]);
                     }catch(err){
                         console.log(err);
                         msg = err;
                     }
                 }else{//jump to timestamp
                     challenge2.updateStreamLine(timestamp,0,true);
+                    challenge2.updateTimeSlider(timestamp);
                 }
                 old_val = cur_val;
                 if(!msg){
@@ -171,15 +174,17 @@
             let curValue = +(timestamp_slider.node().value);
             console.log("start:",start_index,"new val:",curValue+diff,"step size:",diff,"raw step value",value);
             let dist_to_start = (start_index) ? (curValue - start_index) : 0;
+            let dist_to_end = (end_index) ? (end_index - curValue) : (timestamps.length-1);
             //ensure positive step size
-            if(value < 1 /*|| value > 48*/ || (curValue+diff) >= timestamps.length ){
-                alert(`Please enter a positive number no larger than ${timestamps.length-1-curValue}`);
+            if(value < 1 /*|| value > 48 || (curValue+diff) >= end_index*/ ){
+                alert(`Please enter a positive number`);
                 d3.select('#time-step-size').node().value = 1;
                 return;
             }
-            //go up to the start index
-            if(start_index !== undefined && start_index > curValue+diff){
+            if(start_index !== undefined && start_index > curValue+diff){//go up to the start index
                 diff = -(dist_to_start);
+            }else if(end_index !==undefined && end_index < curValue+diff){//go up to the end index
+                diff = dist_to_end
             }
             console.log(curValue,amount,value);
             timestamp_slider.node().value = curValue + diff;
@@ -190,6 +195,14 @@
             let index = timestamps.indexOf(timestamp);
             timestamp_slider.node().value = index;
             updateStreamLine(timestamp);
+            updateIndices();
+        }
+
+        function updateIndices(){
+            let startDate = d3.select('#time-range-start').text();
+            let endDate = d3.select('#time-range-end').text();
+            start_index = timestamps.indexOf(startDate);
+            end_index = timestamps.indexOf(endDate);
         }
 
         function toggleSimulation(){
@@ -218,8 +231,11 @@
             }
 
             timestamp_slider.classed('disabled',true);
+            let sliderDiv = d3.select('#timestamp-brush-slider');
+            sliderDiv.classed('disabled',true);
+            sliderDiv.select('.brush').classed('disabled',true);
 
-            start_index = +(timestamp_slider.node().value);
+            // start_index = +(timestamp_slider.node().value);
 
 
             let interpolation_dropdown = d3.select('#interpolation-method');
@@ -232,8 +248,11 @@
 
         function stopSimulation(){
             timestamp_slider.classed('disabled',false);
+            let sliderDiv = d3.select('#timestamp-brush-slider');
+            sliderDiv.classed('disabled',false);
+            sliderDiv.select('.brush').classed('disabled',false);
 
-            start_index = undefined;
+            // start_index = undefined;
 
             let interpolation_dropdown = d3.select('#interpolation-method');
             interpolation_dropdown.classed('disabled', false).attr('disabled',null);
@@ -250,6 +269,7 @@
             timestamp_slider.attr('max',timestamps.length-1);
             timestamp_slider.on('input',updateStreamLine);
             updateStreamLine(); //set streamline graph to show data for first timestamp
+            challenge2.drawDelta(selectedChemical,selectedSensor);
             old_val = timestamp_slider.node().value;
             $('[data-toggle="tooltip"]').tooltip(); 
             console.log("Ready");

@@ -21,11 +21,6 @@ let TimeSlider = function(options){
     let line = d3.line()
         .x((d) => { return d.x; }).y((d) => { return d.y; });
 
-    // self.updateTimeStampSelector = function(timestamp){
-    //     // d3.select('#current-time-stamp').text(timestamp);
-    //     options.jumpToTimeStamp(timestamp);
-    // }
-
     function drawPointAt(x, y) {
         if (x instanceof Vector) {
             y = x.y;
@@ -70,7 +65,7 @@ let TimeSlider = function(options){
             .domain([new Date(2016, 7, 1), new Date(new Date(2016, 8, 1) - 1)])
             .range([(w/3)-padding, (2*w/3)-padding]);
         monthScales['December 2016'] = d3.scaleTime()
-            .domain([new Date(2016,11,1), new Date(new Date(2017,0,1)-1)])
+            .domain([new Date(2016,11,1), new Date(new Date(2016,12,1)-1)])
             .range([(2*w/3)-padding,(w-padding)]);
 
         scales.monthScales = monthScales;
@@ -96,6 +91,7 @@ let TimeSlider = function(options){
         //based on https://bl.ocks.org/mbostock/6232537
         drawAxes();
         drawRangeBrush();
+        // drawTimeStampSelector();
     };
 
     function drawAxes(){
@@ -187,6 +183,7 @@ let TimeSlider = function(options){
                 }
                 prevScale = scales.monthScales[m];
             }
+            targetScale = targetScale || prevScale;
             if(verbose) console.log("initial",brushRange);
 
             //snap to closest 12 hour
@@ -201,6 +198,7 @@ let TimeSlider = function(options){
             if(verbose) console.log("After hour rounding",brushRange);
 
             //if not in same month, snap to the month with largest diff
+            right = right || d3.timeDay.offset(d3.timeMonth.offset(d3.timeMonth.floor(left)),-1); //fix for reaching end of scale
             if(left.getMonth() !== right.getMonth()){                
                 //diffs are distances to edges of month
                 let leftDiff = Math.abs(left.getDate() - d3.timeDay.offset(d3.timeMonth.floor(left), -1).getDate());
@@ -258,10 +256,12 @@ let TimeSlider = function(options){
             }
 
             //if not in same month, snap to the month with largest diff
+            right = right || d3.timeDay.offset(d3.timeMonth.offset(d3.timeMonth.floor(left)), -1); //fix for reaching end of scale
             if (left.getMonth() !== right.getMonth()) {
                 //diffs are distances to edges of month
                 let leftDiff = Math.abs(left.getDate() - d3.timeDay.offset(d3.timeMonth.floor(left), -1).getDate());
                 let rightDiff = right.getDate();
+                if (verbose) console.log(left, right, leftDiff, rightDiff);
                 if (rightDiff > leftDiff) {//snap to beginning of right
                     brushRange[0] = d3.timeMonth.floor(right);
                     brushRange[1] = d3.timeDay.offset(brushRange[0]);
@@ -284,6 +284,26 @@ let TimeSlider = function(options){
             .call(brush);
     }
 
+    function drawTimeStampSelector(time_stamp){
+        console.log("brushslider",time_stamp);
+        let stampScale;
+        //get month scale
+        let date = new Date(time_stamp);
+        for(let m in scales.monthScales){
+            let monthRange = scales.monthScales[m].domain();
+            if(date < monthRange[1]){
+                stampScale = scales.monthScales[m];
+                break;
+            }
+        }
+
+        let xPos = stampScale(date);
+        svg.selectAll('.timestamp-indicator').remove();
+        svg.append('path').classed('timestamp-indicator',true)
+            .datum([new Vector(xPos,padding),new Vector(xPos,h-padding)])
+            .attr('d',line);
+    }
+
     self.changeChemical = (newChemical) => {
         // let chemical_names = ['Appluimonia', 'Chlorodinine', 'Methylosmolene', 'AGOC-3A'];
         if(chemical_names.indexOf(newChemical) === -1){
@@ -300,9 +320,21 @@ let TimeSlider = function(options){
     //chemical is a string with the chemical name
     //sensor is a string with the sensor name
     //delta should be in the same format as challenge2.data.delta
-    self.update = (data) => {
+    // self.update = (time_stamp,sensor,chemical,data) => {
+    //     if(time_stamp){
+    //         drawTimeStampSelector
+    //     }
+    // };
 
-    };
+    self.drawChemicalDelta = (chemical,data) => {
+        selectedChemical = chemical;
+
+        console.log("received",chemical,data);
+    }
+
+    self.updateTimeStamp = (time_stamp) => {
+        drawTimeStampSelector(time_stamp);
+    }
 
 
     

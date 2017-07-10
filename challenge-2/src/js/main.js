@@ -575,6 +575,15 @@ let Challenge2 = function(options){
     }
     self.updateStreamLine = updateStreamLine;
 
+    function updateTimeSlider(time_stamp,sensor,chemical){
+        if(verbose) console.log("Entered updateTimeSlider",time_stamp,chemical);
+        if(time_stamp){
+            self.timeSlider.updateTimeStamp(time_stamp);
+        }
+        // self.timeSlider.update(time_stamp,sensor,chemical);
+    }
+    self.updateTimeSlider = updateTimeSlider;
+
     function getChemicalTimeStamps(){
         let timestamps = Object.keys(self.data.chemical);
         timestamps = timestamps.filter((d) => {

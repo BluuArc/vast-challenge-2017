@@ -265,3 +265,7 @@ text.legend-label {
 .slider-background {
     fill: #EEEEEE;
 }
+
+.timestamp-indicator {
+    stroke: blue;
+}
