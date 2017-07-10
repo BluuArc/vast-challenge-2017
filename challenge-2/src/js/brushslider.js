@@ -21,6 +21,11 @@ let TimeSlider = function(options){
     let line = d3.line()
         .x((d) => { return d.x; }).y((d) => { return d.y; });
 
+    // self.updateTimeStampSelector = function(timestamp){
+    //     // d3.select('#current-time-stamp').text(timestamp);
+    //     options.jumpToTimeStamp(timestamp);
+    // }
+
     function drawPointAt(x, y) {
         if (x instanceof Vector) {
             y = x.y;
@@ -33,12 +38,13 @@ let TimeSlider = function(options){
             .attr('cy', y);
     }
 
-    function updateTimeRange(start,end){
+    function updateTimeRange(start,end,doFullUpdate){
         function convertDateToTimeStamp(date) {
             return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear() % 1000} ${date.getHours()}:00`;
         }
         d3.select('#time-range-start').text(convertDateToTimeStamp(start));
         d3.select('#time-range-end').text(convertDateToTimeStamp(end));
+        if(doFullUpdate) options.jumpToTimeStamp(convertDateToTimeStamp(start));
     }
 
     self.init = function(options){
@@ -211,14 +217,68 @@ let TimeSlider = function(options){
                 }
             }
             if(verbose) console.log("After month rounding",brushRange);
-            updateTimeRange(brushRange[0],brushRange[1]);
+            updateTimeRange(brushRange[0],brushRange[1],true);
 
             d3.select(this).transition().call(d3.event.target.move, brushRange.map(targetScale));
+        }
+
+        function onbrush(){
+            if (!d3.event.sourceEvent) return; // Only transition after input.
+            if (!d3.event.selection) return; // Ignore empty selections.
+
+            let brushRange;
+            let left, right;
+            let monthScales = Object.keys(scales.monthScales);
+            let targetScale, prevScale;
+            //get correct scale
+            for (let m of monthScales) {
+                brushRange = d3.event.selection.map(scales.monthScales[m].invert);
+                let monthRange = scales.monthScales[m].domain();
+                if (brushRange[0] < monthRange[1] && !left) {
+                    left = brushRange[0];
+                }
+                if (brushRange[1] < monthRange[1] && !right) {
+                    right = brushRange[1];
+                }
+                if (left && right) {
+                    targetScale = scales.monthScales[m];
+                    break;
+                }
+                prevScale = scales.monthScales[m];
+            }
+
+            //snap to closest 12 hour
+            brushRange[0] = d3.timeHour.floor(brushRange[0]);
+            let next12 = d3.timeHour.offset(brushRange[0], 12);
+            let rightFloor = d3.timeHour.floor(brushRange[1]);
+            if (rightFloor < next12) { //selection is less than 12 hours
+                brushRange[1] = next12;
+            } else {
+                brushRange[1] = d3.timeHour.floor(brushRange[1]);
+            }
+
+            //if not in same month, snap to the month with largest diff
+            if (left.getMonth() !== right.getMonth()) {
+                //diffs are distances to edges of month
+                let leftDiff = Math.abs(left.getDate() - d3.timeDay.offset(d3.timeMonth.floor(left), -1).getDate());
+                let rightDiff = right.getDate();
+                if (rightDiff > leftDiff) {//snap to beginning of right
+                    brushRange[0] = d3.timeMonth.floor(right);
+                    brushRange[1] = d3.timeDay.offset(brushRange[0]);
+                } else {//snap to end of left
+                    targetScale = prevScale;
+                    let nextMonth = d3.timeMonth.offset(d3.timeMonth.floor(left));
+                    brushRange[1] = d3.timeHour.offset(nextMonth, -1);
+                    brushRange[0] = d3.timeDay.offset(nextMonth, -1);
+                }
+            }
+            updateTimeRange(brushRange[0], brushRange[1]);   
         }
         
         let brush = d3.brushX()
             .extent([[padding,padding],[w-padding,h-padding]])
-            .on('end',brushended);
+            .on('end',brushended)
+            .on('brush',onbrush);
         svg.append('g')
             .classed('brush',true)
             .call(brush);

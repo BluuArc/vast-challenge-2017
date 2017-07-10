@@ -19,6 +19,8 @@ let Challenge2 = function(options){
         });
     }
 
+    let jumpToTimeStamp = options.jumpToTimeStamp;
+
     function init(){
         return loadData().then(function(){
             loadStreamlineMap();
@@ -367,7 +369,8 @@ let Challenge2 = function(options){
                 Chlorodinine: self.data.delta._statistics.Chlorodinine.scale,
                 Methylosmolene: self.data.delta._statistics.Methylosmolene.scale,
                 'AGOC-3A': self.data.delta._statistics['AGOC-3A'].scale,
-                wind: self.data.wind._statistics.scale
+                wind: self.data.wind._statistics.scale,
+                jumpToTimeStamp: jumpToTimeStamp
             }
         };
         self.timeSlider.init(options);

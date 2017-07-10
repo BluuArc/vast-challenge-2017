@@ -110,7 +110,8 @@
         let old_val;
         let start_index;
         let options = {
-            verbose: true
+            verbose: true,
+            jumpToTimeStamp: jumpToTimeStamp
         };
 
         function startWait(){
@@ -121,30 +122,34 @@
             d3.select('#loading-indicator').classed('loading',false);
         }
 
-        function updateStreamLine(){
+        function updateStreamLine(timestamp){
             startWait();
-            let streamLineHelper = function(){
+            let streamLineHelper = function(timestamp){
                 let cur_val = timestamp_slider.node().value;
                 old_val = (+old_val) || 0;
                 let diff = (+cur_val || 0) - (+old_val || 0);
                 let msg;
-                try{
-                    if(diff < 0){
-                        diff *= -1;
-                        for(let d = 0; d < diff; ++d){
-                            challenge2.updateStreamLine(timestamps[old_val-d], -1);
+                if(!timestamp){
+                    try{
+                        if(diff < 0){
+                            diff *= -1;
+                            for(let d = 0; d < diff; ++d){
+                                challenge2.updateStreamLine(timestamps[old_val-d], -1);
+                            }
+                        }else if(diff > 0){
+                            for(let d = 0; d < diff; ++d){
+                                challenge2.updateStreamLine(timestamps[old_val+d], 1);
+                            }
+                        }else{
+                            challenge2.updateStreamLine(timestamps[timestamp_slider.node().value], diff);
                         }
-                    }else if(diff > 0){
-                        for(let d = 0; d < diff; ++d){
-                            challenge2.updateStreamLine(timestamps[old_val+d], 1);
-                        }
-                    }else{
-                        challenge2.updateStreamLine(timestamps[timestamp_slider.node().value], diff);
+                        challenge2.updateStreamLine(timestamps[timestamp_slider.node().value], 0,true);
+                    }catch(err){
+                        console.log(err);
+                        msg = err;
                     }
-                    challenge2.updateStreamLine(timestamps[timestamp_slider.node().value], 0,true);
-                }catch(err){
-                    console.log(err);
-                    msg = err;
+                }else{//jump to timestamp
+                    challenge2.updateStreamLine(timestamp,0,true);
                 }
                 old_val = cur_val;
                 if(!msg){
@@ -179,6 +184,12 @@
             console.log(curValue,amount,value);
             timestamp_slider.node().value = curValue + diff;
             updateStreamLine(value);
+        }
+
+        function jumpToTimeStamp(timestamp){
+            let index = timestamps.indexOf(timestamp);
+            timestamp_slider.node().value = index;
+            updateStreamLine(timestamp);
         }
 
         function toggleSimulation(){
