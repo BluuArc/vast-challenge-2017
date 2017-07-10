@@ -94,10 +94,14 @@ let TimeSlider = function(options){
             .attr('width',w-padding*2).attr('height',h-padding*2)
             .attr('x',padding).attr('y',padding);
 
+        //draw indicator text
+        svg.append('text').classed('slider-text',true).attr('id','data-indicator')
+            .text('Chemical: chemical / Sensor: sensor').attr('x',padding).attr('y',padding*0.9);
+
         //based on https://bl.ocks.org/mbostock/6232537
         drawAxes();
         drawRangeBrush();
-        // drawTimeStampSelector();
+        
     };
 
     function drawAxes(){
@@ -309,19 +313,6 @@ let TimeSlider = function(options){
             .datum([new Vector(xPos,padding),new Vector(xPos,h-padding)])
             .attr('d',line);
     }
-
-    self.changeChemical = (newChemical) => {
-        // let chemical_names = ['Appluimonia', 'Chlorodinine', 'Methylosmolene', 'AGOC-3A'];
-        if(chemical_names.indexOf(newChemical) === -1){
-            throw new Error(`Chemical ${newChemical} is not found.`);
-        }else{
-            selectedChemical = newChemical;
-        }
-
-        console.log("Selected chemical is now",selectedChemical);
-
-    };
-
     //data should have 2 fields: chemical and delta
     //chemical is a string with the chemical name
     //sensor is a string with the sensor name
@@ -379,8 +370,8 @@ let TimeSlider = function(options){
             }
 
             //remove old points and paths
-            svg.selectAll('.diffusion-line').remove();
-            svg.selectAll('.diffusion-notification').remove();
+            svg.selectAll('.delta-line').remove();
+            svg.selectAll('.delta-notification').remove();
 
             //plot points
             for(let p in paths){
@@ -390,9 +381,9 @@ let TimeSlider = function(options){
                     for(let dataPoint of paths[p]){
                         // let point = drawPointAt(dataPoint.scaledTimestamp,max).attr('r',1)
                         let sensorName = p.replace("-NaN","");
-                        let notification = svg.append('path').classed('diffusion-notification',true).attr('id',sensorName)
+                        let notification = svg.append('path').classed('delta-notification',true).attr('id',sensorName)
                             .datum([new Vector(dataPoint.scaledTimestamp,padding*0.9),new Vector(dataPoint.scaledTimestamp,h-padding)])
-                            .attr('d',line).classed('disabled', sensorName !== selectedSensor);
+                            .attr('d',line).classed('hidden', sensorName !== selectedSensor);
                         tooltip.setEvents(notification,`${p.replace("-NaN","")} has a NaN reading at ${dataPoint.timestamp}`);
                     }
                 }else{
@@ -403,7 +394,7 @@ let TimeSlider = function(options){
                     
                     let dataPoints = [];
                     let curMonth, curPoints = [];
-                    //plot points by month
+                    //separate points by month
                     for (let point of paths[p]) {
                         if (!curMonth) {
                             curMonth = new Date(point.timestamp).getMonth();
@@ -417,9 +408,10 @@ let TimeSlider = function(options){
                     }
                     dataPoints.push(curPoints);
 
+                    //plot points by month
                     for(let arr of dataPoints){
                         svg.append('path').datum(arr)
-                            .classed('diffusion-line', true).classed('disabled', p !== selectedSensor)
+                            .classed('delta-line', true).classed('hidden', p !== selectedSensor)
                             .attr('id', p)
                             .attr('d', line);
                     }
@@ -430,10 +422,14 @@ let TimeSlider = function(options){
         }
         if (sensor && sensor !== selectedSensor) {
             selectedSensor = sensor;
-            svg.selectAll('.diffusion-notification').classed('disabled',true);
-            svg.selectAll('.diffusion-line').classed('disabled',true);
-            svg.selectAll(`#${selectedSensor}`).classed('disabled',false).raise();
+            svg.selectAll('.delta-notification').classed('hidden',true);
+            svg.selectAll('.delta-line').classed('hidden',true);
+            svg.selectAll(`#${selectedSensor}`).classed('hidden',false).raise();
         }
+
+        d3.select('#data-indicator')
+            .text(`Chemical: ${selectedChemical} / Sensor: ${selectedSensor}`);
+            
 
     }
 

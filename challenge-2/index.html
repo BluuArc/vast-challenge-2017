@@ -234,7 +234,7 @@
             timestamp_slider.classed('disabled',true);
             let sliderDiv = d3.select('#timestamp-brush-slider');
             sliderDiv.classed('disabled',true);
-            sliderDiv.select('.brush').classed('disabled',true);
+            sliderDiv.selectAll('*').classed('disabled',true);
 
             // start_index = +(timestamp_slider.node().value);
 
@@ -251,7 +251,7 @@
             timestamp_slider.classed('disabled',false);
             let sliderDiv = d3.select('#timestamp-brush-slider');
             sliderDiv.classed('disabled',false);
-            sliderDiv.select('.brush').classed('disabled',false);
+            sliderDiv.selectAll('*').classed('disabled',false);
 
             // start_index = undefined;
 
