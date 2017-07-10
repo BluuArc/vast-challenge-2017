@@ -397,14 +397,32 @@ let TimeSlider = function(options){
                     }
                 }else{
                     //plot path data
-                    let dataPoints = paths[p].map((d) => { 
-                        return new Vector(d.scaledTimestamp, d.scaledReading); 
+                    paths[p] = paths[p].sort((a,b) => {
+                        return new Date(a.timestamp) - new Date(b.timestamp)
                     });
+                    
+                    let dataPoints = [];
+                    let curMonth, curPoints = [];
+                    //plot points by month
+                    for (let point of paths[p]) {
+                        if (!curMonth) {
+                            curMonth = new Date(point.timestamp).getMonth();
+                        } else if (new Date(point.timestamp).getMonth() !== curMonth) {
+                            // console.log(point.timestamp);
+                            dataPoints.push(curPoints);
+                            curPoints = [];
+                            curMonth = new Date(point.timestamp).getMonth();
+                        }
+                        curPoints.push(new Vector(point.scaledTimestamp, point.scaledReading));
+                    }
+                    dataPoints.push(curPoints);
 
-                    let path = svg.append('path').datum(dataPoints)
-                        .classed('diffusion-line',true).classed('disabled',p !== selectedSensor)
-                        .attr('id',p)
-                        .attr('d',line);
+                    for(let arr of dataPoints){
+                        svg.append('path').datum(arr)
+                            .classed('diffusion-line', true).classed('disabled', p !== selectedSensor)
+                            .attr('id', p)
+                            .attr('d', line);
+                    }
                 }
             }
 
