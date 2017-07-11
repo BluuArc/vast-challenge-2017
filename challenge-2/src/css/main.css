@@ -178,12 +178,12 @@ path, line {
     stroke-linecap: round;
 }
 
-.delta-line {
+.delta-line, .overview-path {
     stroke: black;
     opacity: 1;
 }
 
-.delta-line.inactive {
+.delta-line.inactive, .overview-path.inactive{
     stroke: grey;
     opacity: 0.1;
 }

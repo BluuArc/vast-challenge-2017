@@ -5,6 +5,7 @@ var tooltip = tooltip || new Tooltip();
 let ChemicalOverviewChart = function(options){
     options = options || {};
     let self = this;
+    let verbose = options.verbose || false;
     let w = 400, h = 400;
     let padding = 25;
     let paddingLeft = 35, paddingRight = padding - paddingLeft;
@@ -23,6 +24,7 @@ let ChemicalOverviewChart = function(options){
 
     //based off of https://bl.ocks.org/mbostock/34f08d5e11952a80609169b7917d4172
     self.init = function(options){
+        console.log("received",options);
         let svgRange = {
             x: d3.scaleLinear().range([padding, w-padding]),
             y: d3.scaleLinear().range([padding, h-padding])
@@ -44,6 +46,7 @@ let ChemicalOverviewChart = function(options){
         drawAxes();
 
         updateTimeScale("4/1/16 0:00", "4/2/16 0:00");
+        console.log(scales);
     };
 
     function drawAxes(){
@@ -106,6 +109,7 @@ let ChemicalOverviewChart = function(options){
     }
     
     self.update = function(start,end,data){
+        console.log("entered overview chart update",start,end,data);
         updateTimeScale(start,end);
 
         let start_time = new Date(start);
@@ -113,12 +117,13 @@ let ChemicalOverviewChart = function(options){
         //filter out data out of range
         let timestamps = Object.keys(data).filter((d) => {
             let date = new Date(d);
-            return d >= start_time && d <= end_time;   
+            return date >= start_time && date <= end_time;   
         }).sort((a,b) => { 
             return new Date(a) - new Date(b); 
         });
 
-        
+        console.log("Filtered timestamps",timestamps);
+
         //array of paths
         let paths = {
             'Appluimonia': {},
@@ -145,17 +150,19 @@ let ChemicalOverviewChart = function(options){
                 tempPaths[c][`sensor${i}`] = [];
             }
         }
+        
         //create path points
         for(let t of timestamps){
-            for(let s of timestamps[t]){
-                for(let c of timestamps[t][s]){
-                    let readings = timestamps[t][s][c];
+            for(let s in data[t]){
+                for(let c in data[t][s]){
+                    let readings = data[t][s][c];
+                    // console.log(c);
                     if(readings.length === 1){
                         tempPaths[c][s].push({
                             reading: readings[0],
                             timestamp: t,
                             scaledReading: scales[c](readings[0]),
-                            scaledTime: scales.x(t)
+                            scaledTime: scales.x(new Date(t)) + (paddingLeft-padding)
                         });
                     }else{ //erroneous
                         if (!erroneous[c][s]){
@@ -187,6 +194,8 @@ let ChemicalOverviewChart = function(options){
             }
         }
 
+        console.log(paths);
+
         //plot chemical data
         svg.selectAll('.overview-path').remove();
         let c = 'Appluimonia';
@@ -194,8 +203,9 @@ let ChemicalOverviewChart = function(options){
             for(let s in paths[c]){
                 for(let p of paths[c][s]){ //for every path
                     let points = p.map((d) => { return new Vector(d.scaledTime,d.scaledReading)});
+                    console.log("points for",s,points)
                     svg.append('path').datum(points)
-                        .classed('overview-line',true)
+                        .classed('overview-path',true)
                         .attr('id',s)
                         .attr('d',line);
                 }

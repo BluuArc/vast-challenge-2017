@@ -33,14 +33,12 @@ let Challenge2 = function(options){
                     options.timestamps.push(t);
                 }
             }
-
-
             self.streamLineMap = new StreamlineGraph(options);
             self.timeSlider = new TimeSlider(options);
             self.overviewChart = new ChemicalOverviewChart(options);
             loadStreamlineMap();
-            loadBrushSlider();
             loadOverviewMap();
+            loadBrushSlider();
             // loadOSPs();
 
             //populate interpolation dropdown
@@ -358,8 +356,6 @@ let Challenge2 = function(options){
                 self.data.wind._statistics = statistics.wind;
                 self.data.chemical._statistics = statistics.chemical;
                 self.data.delta._statistics = statistics.delta;
-                if(verbose) console.log("Done loading data. Number of erronous chemical entries",count);
-                // if(verbose) console.log(min,max);
                 return;
             });
     }
@@ -402,6 +398,7 @@ let Challenge2 = function(options){
                 wind: self.data.wind._statistics.scale
             },
         };
+        console.log("Started initialization of overview map");
         self.overviewChart.init(options);
     }
 
