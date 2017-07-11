@@ -44,13 +44,6 @@ let TimeSlider = function(options){
     }
 
     self.init = function(options){
-        // options = options || {};
-        // let optionScales = options.scales || {
-        //     Appluimonia: {},
-        //     Chlorodinine: {},
-        //     Methylosmolene: {},
-        //     'AGOC-3A': {},
-        // };
 
         let svgRange = {
             x: [padding, w-padding],
@@ -84,11 +77,11 @@ let TimeSlider = function(options){
         scales.verticalScale = d3.scaleLinear().domain([1,-1]).range(svgRange.y);
         scales.horizontalScale = d3.scaleLinear().domain([0,3]).range(svgRange.x);
 
-        for(let s in scales){
-            if(typeof scales[s] === "function"){
-                console.log(s,scales[s].domain(),scales[s].range());
-            }
-        }
+        // for(let s in scales){
+        //     if(typeof scales[s] === "function"){
+        //         console.log(s,scales[s].domain(),scales[s].range());
+        //     }
+        // }
 
         //draw background
         svg.append('rect').classed('slider-background',true)
@@ -321,15 +314,6 @@ let TimeSlider = function(options){
             .datum([new Vector(xPos,padding),new Vector(xPos,h-padding)])
             .attr('d',line);
     }
-    //data should have 2 fields: chemical and delta
-    //chemical is a string with the chemical name
-    //sensor is a string with the sensor name
-    //delta should be in the same format as challenge2.data.delta
-    // self.update = (time_stamp,sensor,chemical,data) => {
-    //     if(time_stamp){
-    //         drawTimeStampSelector
-    //     }
-    // };
 
     self.drawChemicalDelta = (chemical,sensor,data) => {
         // selectedChemical = chemical;

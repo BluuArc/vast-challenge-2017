@@ -37,8 +37,10 @@ let Challenge2 = function(options){
 
             self.streamLineMap = new StreamlineGraph(options);
             self.timeSlider = new TimeSlider(options);
+            self.overviewChart = new ChemicalOverviewChart(options);
             loadStreamlineMap();
             loadBrushSlider();
+            loadOverviewMap();
             // loadOSPs();
 
             //populate interpolation dropdown
@@ -390,6 +392,21 @@ let Challenge2 = function(options){
         self.timeSlider.init(options);
     }
 
+    function loadOverviewMap() {
+        let options = {
+            scales: {
+                Appluimonia: self.data.chemical._statistics.Appluimonia.scale,
+                Chlorodinine: self.data.chemical._statistics.Chlorodinine.scale,
+                Methylosmolene: self.data.chemical._statistics.Methylosmolene.scale,
+                'AGOC-3A': self.data.chemical._statistics['AGOC-3A'].scale,
+                wind: self.data.wind._statistics.scale
+            },
+        };
+        self.overviewChart.init(options);
+    }
+
+
+
     function convertDateToTimeStamp(date){
         return `${date.getMonth()+1}/${date.getDate()}/${date.getFullYear() % 1000} ${date.getHours()}:00`;
     }
@@ -597,9 +614,18 @@ let Challenge2 = function(options){
         if(sensor || chemical){
             self.timeSlider.drawChemicalDelta(chemical,sensor,self.data.delta);
         }
-        // self.timeSlider.update(time_stamp,sensor,chemical);
     }
     self.updateTimeSlider = updateTimeSlider;
+
+    function updateOverviewTimeIndicator(time_stamp){
+        self.overviewChart.updateTimeSelector(time_stamp);
+    }
+    self.updateOverviewTimeIndicator = updateOverviewTimeIndicator;
+
+    function updateOverviewCharts(start,end){
+        self.overviewChart.update(start,end,self.data.chemical);
+    }
+    self.updateOverviewCharts = updateOverviewCharts;
 
     function getChemicalTimeStamps(){
         let timestamps = Object.keys(self.data.chemical);
@@ -609,12 +635,6 @@ let Challenge2 = function(options){
         return timestamps;
     }
     self.getChemicalTimeStamps = getChemicalTimeStamps;
-
-    function loadOSPs(){
-        let osp = new OverviewScatterPlot(d3.select('#osp-container-1'),1);
-        osp.init();
-        if(verbose) console.log("Loaded OSPs");
-    }
 
     self.startSimulation = function(index, time_stamp,diffusionRate){
         self.windModeIndex = index;

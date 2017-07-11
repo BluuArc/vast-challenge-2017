@@ -201,6 +201,10 @@ g.axis {
     /*fill: white;*/
 }
 
+text.overview-axis {
+    stroke: none;
+}
+
 
 div.tooltip#vis {
     position: absolute;

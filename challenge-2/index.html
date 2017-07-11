@@ -12,10 +12,12 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.2.6/d3.min.js"></script>
     <script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
+
     <script src="./src/js/vector.js"></script>
     <script src="./src/js/tooltip.js"></script>
     <script src="./src/js/brushslider.js"></script>
     <script src="./src/js/streamline.js"></script>
+    <script src="./src/js/overview-charts.js"></script>
     <script src="./src/js/main.js"></script>
 </head>
 
@@ -94,8 +96,9 @@
         </div>
         <!--Visualizations-->
         <div class="row">
-            <div class="col-sm-6 main-column" id="overview" style="border: 1px solid gray;">
-                overview
+            <div class="col-sm-6 main-column" id="overview" style="/*border: 1px solid gray;*/">
+                <div class="svg-container" id="overview-graph" style="border: 1px solid gray; background-color:white">
+                </div>
             </div>
             <div class="col-sm-6 main-column" id="simulation-map">
                 <div class="svg-container" id="streamline-graph" style="border: 1px solid gray; background-color:white">
@@ -148,6 +151,7 @@
                         }
                         challenge2.updateStreamLine(timestamps[timestamp_slider.node().value], 0,true);
                         challenge2.updateTimeSlider(timestamps[timestamp_slider.node().value]);
+                        challenge2.updateOverviewTimeIndicator(timestamps[timestamp_slider.node().value]);
                     }catch(err){
                         console.log(err);
                         msg = err;
@@ -205,6 +209,7 @@
             let endDate = d3.select('#time-range-end').text();
             start_index = timestamps.indexOf(startDate);
             end_index = timestamps.indexOf(endDate);
+            challenge2.updateOverviewCharts(startDate,endDate);
         }
 
         function toggleSimulation(){
