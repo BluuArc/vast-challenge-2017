@@ -124,6 +124,12 @@ let StreamlineGraph = function (options) {
             .attr('text-anchor', 'middle').attr('transform', `translate(${padding*0.25},${h/2}) rotate(-90)`)
             .text('Miles (South-North)');
 
+
+        svg.append('text').classed('graph-title',true)
+            .attr('text-anchor','middle')
+            .attr('x',w/2).attr('y',padding)
+            .text("Streamline Map")
+
         drawFactories();
         drawSensors();
         drawWindGlyphs();

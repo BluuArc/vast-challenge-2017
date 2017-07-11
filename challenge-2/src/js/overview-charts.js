@@ -7,8 +7,8 @@ let ChemicalOverviewChart = function(options){
     let self = this;
     let verbose = options.verbose || false;
     let w = 400, h = 400;
-    let padding = 25;
-    let paddingLeft = 35, paddingRight = padding - paddingLeft;
+    let padding = 30;
+    let paddingLeft = 40, paddingRight = padding - paddingLeft;
     const chemical_names = ['Appluimonia', 'Chlorodinine', 'Methylosmolene', 'AGOC-3A'];
     let graphPadding = 10;
     let graphSize = (h-padding)/chemical_names.length - graphPadding;
@@ -39,6 +39,11 @@ let ChemicalOverviewChart = function(options){
 
         scales.x = d3.scaleTime().range(svgRange.x.range());
         scales.svgRange = svgRange; //can be used for debugging
+
+        svg.append('text')
+            .text("Chemical Reading Overview")
+            .attr('text-anchor','middle').classed('graph-title',true)
+            .attr('x',w/2).attr('y',padding);
 
         drawAxes();
 

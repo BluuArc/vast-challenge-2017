@@ -308,3 +308,7 @@ text.legend-label {
 .data-indicator-text {
     display: inline;
 }
+
+.graph-title{
+    font-size: small;
+}
