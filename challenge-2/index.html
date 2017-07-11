@@ -40,14 +40,21 @@
         <div class="row">
             <!--Time Range Info-->
             <div class="col-md-5">
-                <div class="row">
-                    <p class="col-md-6"><b>Time Range Start:</b> <span id="time-range-start">some date</span></p>
-                    <p class="col-md-6"><b>Time Range End:</b> <span id="time-range-end">some other date</span></p>
+                <div class="row" style="text-align:center">
+                    <div class="col-md-4">
+                        <b style="font-size:1vw;">Focus:</b>
+                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="right" title="The left represents the chemical that is being focused on in the delta slider. The right represents the sensor whose data is being shown in the delta slider and chemical reading overview"></span>
+                    </div>
+                    <p class="col-md-4" style="font-size:1vw;" id="focus-chemical">Chemical</p>
+                    <p class="col-md-4" style="font-size:1vw;" id="focus-sensor">sensor1</p>
                 </div>
-                <div class="row">
-                    <b class="col-md-2" style="font-size:1vw;">Focus:</b>
-                    <p class="col-md-5" style="font-size:1vw;" id="focus-chemical">Chemical</p>
-                    <p class="col-md-5" style="font-size:1vw;" id="focus-sensor">sensor1</p>
+                <div class="row" style="text-align:center">
+                    <div class="col-md-4">
+                        <b style="font-size:1vw;">Time Range:</b>
+                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="right" title="The left and right show the start and end, respectively, of the delta slider and the axes on the chemical reading overview"></span>
+                    </div>
+                    <p class="col-md-4" style="font-size:1vw;" id="time-range-start">some date</p>
+                    <p class="col-md-4" style="font-size:1vw;" id="time-range-end">some other date</p>
                 </div>
             </div>
             <!--Time Step Controls-->
