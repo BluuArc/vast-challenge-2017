@@ -24,6 +24,9 @@
 <body style="background-color:#DDDDDD">
     <div class="tooltip" id="vis"></div>
     <div class="container-fluid">
+        <div class="row" style="text-align:center">
+            <b><a href="http://vacommunity.org/VAST+Challenge+2017">VAST Challenge 2017</a> - <a href="http://vacommunity.org/VAST+Challenge+2017+MC2">Mini Challenge 2</a> by Joshua Castor and Joseph Boriwicz</b>
+        </div>
         <!--Main Slider-->
         <div class="row" style="display: none;">
             <input id="timestamp-slider" type="range" value="0" style="max-width: 98%; margin:1%; height:20px; -webkit-appearance:none;"/>
@@ -42,9 +45,9 @@
                     <p class="col-md-6"><b>Time Range End:</b> <span id="time-range-end">some other date</span></p>
                 </div>
                 <div class="row">
-                    <b class="col-md-2" style="font-size:x-large;">Focus:</b>
-                    <p class="col-md-5" style="font-size:x-large;">Chemical</p>
-                    <p class="col-md-5" style="font-size:x-large;">sensor</p>
+                    <b class="col-md-2" style="font-size:1vw;">Focus:</b>
+                    <p class="col-md-5" style="font-size:1vw;" id="focus-chemical">Chemical</p>
+                    <p class="col-md-5" style="font-size:1vw;" id="focus-sensor">sensor1</p>
                 </div>
             </div>
             <!--Time Step Controls-->
@@ -124,7 +127,7 @@
             jumpToTimeStamp: jumpToTimeStamp,
             timestamps: timestamps
         };
-        let selectedChemical = 'AGOC-3A';
+        let selectedChemical = 'Appluimonia';
         let selectedSensor = 'sensor1';
 
         function startWait(){

@@ -16,8 +16,8 @@ let TimeSlider = function(options){
     const chemical_names = ['Appluimonia', 'Chlorodinine', 'Methylosmolene', 'AGOC-3A'];
 
     //default selections
-    let selectedSensor = 'sensor1';
-    let selectedChemical = 'Appluimonia'; 
+    let selectedSensor// = 'sensor1';
+    let selectedChemical = 'AGOC-3A'; 
 
     let line = d3.line()
         .x((d) => { return d.x; }).y((d) => { return d.y; });
@@ -91,7 +91,7 @@ let TimeSlider = function(options){
         //draw indicator text
         let textIndicator = svg.append('foreignObject').classed('slider-text',true).attr('id','data-indicator')
             .attr('width', w).attr('height', padding * 0.9)
-            .text('Chemical: chemical / Sensor: sensor').attr('x',padding).attr('y',0);
+            .text('Delta Slider').attr('x',padding).attr('y',0);
         tooltip.setEvents(textIndicator,`You can select time ranges here. The data shown is the delta (difference) of the readings of a given chemical and sensor over time`);
 
         //based on https://bl.ocks.org/mbostock/6232537
@@ -319,16 +319,25 @@ let TimeSlider = function(options){
         // selectedChemical = chemical;
         // selectedSensor = sensor;
         console.log("received",chemical,sensor,data);
+        let chemical_indicator = d3.select('#focus-chemical');
+        let sensor_indicator = d3.select('#focus-sensor');
 
         if (sensor && sensor !== selectedSensor) {
             selectedSensor = sensor;
             svg.selectAll('.delta-notification').classed('inactive', true);
             svg.selectAll('.delta-line').classed('inactive', true);
             svg.selectAll(`#${selectedSensor}`).classed('inactive', false).raise();
+            sensor_indicator.text(selectedSensor);
+
+            d3.selectAll('g.pixel-sensor').selectAll('.sensor-label-overlay').classed('inactive',true);
+            d3.selectAll(`g#pixel-sensor-${selectedSensor.split('sensor')[1]}`)
+                .selectAll('.sensor-label-overlay').classed('inactive',false);
         }
 
         if(chemical && chemical !== selectedChemical){
+            chemical_indicator.classed(selectedChemical,false);
             selectedChemical = chemical
+            chemical_indicator.classed(selectedChemical,true).text(selectedChemical);
 
             let paths = {};
             for(let i = 1; i <= 9; ++i){
@@ -421,7 +430,7 @@ let TimeSlider = function(options){
             svg.selectAll(`#${selectedSensor}`).raise();
         }
 
-        d3.select('#data-indicator').html(`Delta Slider | Chemical: <p class="${selectedChemical} data-indicator-text">${selectedChemical}</p> / Sensor: <p class=data-indicator-text>${selectedSensor}</p>`);
+        // d3.select('#data-indicator').html(`Delta Slider | Chemical: <p class="${selectedChemical} data-indicator-text">${selectedChemical}</p> / Sensor: <p class=data-indicator-text>${selectedSensor}</p>`);
 
     }
 

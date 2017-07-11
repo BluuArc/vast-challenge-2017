@@ -149,8 +149,12 @@ path, line {
     font-size: 1vw;
 }*/
 
-.sensor-label-overlay {
+.sensor-label-overlay.inactive {
     stroke: lightgray;
+}
+
+.sensor-label-overlay {
+    stroke: #777777;
     fill: lightgray;
 }
 
