@@ -172,13 +172,14 @@ path, line {
     opacity: 0.5;
 }
 
-.delta-notification {
+.delta-notification, .overview-notification {
     stroke: red;
     opacity: 0.25;
     stroke-linecap: round;
 }
 
 .delta-line, .overview-path {
+    fill: none;
     stroke: black;
     opacity: 1;
 }

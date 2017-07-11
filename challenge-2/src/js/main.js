@@ -22,9 +22,11 @@ let Challenge2 = function(options){
     function init(){
         options.sensorClickHandler = (sensorName) => {
             self.updateTimeSlider(undefined, sensorName, undefined);
+            self.updateOverviewCharts(undefined,undefined,sensorName,undefined);
         }
         options.chemicalClickHandler = (chemicalName,sensorName) => {
             self.updateTimeSlider(undefined,sensorName,chemicalName);
+            self.updateOverviewCharts(undefined, undefined, sensorName, undefined);
         }
         return loadData().then(function(){
             if(options.timestamps){
@@ -619,8 +621,8 @@ let Challenge2 = function(options){
     }
     self.updateOverviewTimeIndicator = updateOverviewTimeIndicator;
 
-    function updateOverviewCharts(start,end){
-        self.overviewChart.update(start,end,self.data.chemical);
+    function updateOverviewCharts(start,end, sensor){
+        self.overviewChart.update(start,end,sensor,self.data.chemical);
     }
     self.updateOverviewCharts = updateOverviewCharts;
 

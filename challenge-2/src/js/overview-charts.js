@@ -13,6 +13,7 @@ let ChemicalOverviewChart = function(options){
     let graphPadding = 10;
     let graphSize = (h-padding)/chemical_names.length - graphPadding;
     let graphs = [];
+    let selectedSensor = 'sensor1';
 
     let svg = d3.select('#overview-graph').append('svg').classed('svg-content', true)
         .attr('viewBox', `0 0 ${w} ${h}`).attr('preserveAspectRatio', `xMinYMin meet`);
@@ -39,10 +40,6 @@ let ChemicalOverviewChart = function(options){
         scales.x = d3.scaleTime().range(svgRange.x.range());
         scales.svgRange = svgRange; //can be used for debugging
 
-        svg.append('defs').append('clipPath')
-            .attr('id','clip')
-            .append('rect')
-            .attr('width')
         drawAxes();
 
         updateTimeScale("4/1/16 0:00", "4/2/16 0:00");
@@ -108,109 +105,137 @@ let ChemicalOverviewChart = function(options){
         }
     }
     
-    self.update = function(start,end,data){
+    self.update = function(start,end,sensor,data){
         console.log("entered overview chart update",start,end,data);
-        updateTimeScale(start,end);
 
-        let start_time = new Date(start);
-        let end_time = new Date(end);
-        //filter out data out of range
-        let timestamps = Object.keys(data).filter((d) => {
-            let date = new Date(d);
-            return date >= start_time && date <= end_time;   
-        }).sort((a,b) => { 
-            return new Date(a) - new Date(b); 
-        });
-
-        console.log("Filtered timestamps",timestamps);
-
-        //array of paths
-        let paths = {
-            'Appluimonia': {},
-            'Chlorodinine': {},
-            'Methylosmolene': {},
-            'AGOC-3A': {},  
-        }; 
-        //array of points
-        let erroneous = {
-            'Appluimonia': {},
-            'Chlorodinine': {},
-            'Methylosmolene': {},
-            'AGOC-3A': {},
-        };
-        //array of points; each array is one path
-        let tempPaths = {
-            'Appluimonia': {},
-            'Chlorodinine': {},
-            'Methylosmolene': {},
-            'AGOC-3A': {},
-        };
-        for(let c in tempPaths){
-            for (let i = 1; i <= 9; ++i) {
-                tempPaths[c][`sensor${i}`] = [];
-            }
+        if(sensor && sensor !== selectedSensor){
+            selectedSensor = sensor;
+            console.log("updating sensor to",selectedSensor);
+            svg.selectAll('.overview-notification').classed('inactive',true);
+            svg.selectAll('.overview-path').classed('inactive',true);
+            svg.selectAll(`#${selectedSensor}`).classed('inactive',false).raise();
         }
-        
-        //create path points
-        for(let t of timestamps){
-            for(let s in data[t]){
-                for(let c in data[t][s]){
-                    let readings = data[t][s][c];
-                    // console.log(c);
-                    if(readings.length === 1){
-                        tempPaths[c][s].push({
-                            reading: readings[0],
-                            timestamp: t,
-                            scaledReading: scales[c](readings[0]),
-                            scaledTime: scales.x(new Date(t)) + (paddingLeft-padding)
-                        });
-                    }else{ //erroneous
-                        if (!erroneous[c][s]){
-                            erroneous[c][s] = [];
-                        }
-                        erroneous[c][s].push(t);
 
-                        //push current stuff and reset array, if necessary
-                        if(!paths[c][s]){
-                            paths[c][s] = [];
-                        }
-                        if(tempPaths[c][s].length > 1){
-                            paths[c][s].push(tempPaths[c][s]);
-                            tempPaths[c][s] = [];
+        if(start && end){
+            updateTimeScale(start, end);
+            let start_time = new Date(start);
+            let end_time = new Date(end);
+            //filter out data out of range
+            let timestamps = Object.keys(data).filter((d) => {
+                let date = new Date(d);
+                return date >= start_time && date <= end_time;   
+            }).sort((a,b) => { 
+                return new Date(a) - new Date(b); 
+            });
+
+            console.log("Filtered timestamps",timestamps);
+
+            //array of paths
+            let paths = {
+                'Appluimonia': {},
+                'Chlorodinine': {},
+                'Methylosmolene': {},
+                'AGOC-3A': {},  
+            }; 
+            //array of points
+            let erroneous = {
+                'Appluimonia': {},
+                'Chlorodinine': {},
+                'Methylosmolene': {},
+                'AGOC-3A': {},
+            };
+            //array of points; each array is one path
+            let tempPaths = {
+                'Appluimonia': {},
+                'Chlorodinine': {},
+                'Methylosmolene': {},
+                'AGOC-3A': {},
+            };
+            for(let c in tempPaths){
+                for (let i = 1; i <= 9; ++i) {
+                    tempPaths[c][`sensor${i}`] = [];
+                }
+            }
+            
+            //create path points
+            for(let t of timestamps){
+                for(let s in data[t]){
+                    for(let c in data[t][s]){
+                        let readings = data[t][s][c];
+                        let offset = padding / 2 + (chemical_names.indexOf(c)) * graphSize + (chemical_names.indexOf(c)) * graphPadding;
+                        // console.log(c);
+                        if(readings.length === 1){
+                            tempPaths[c][s].push({
+                                reading: readings[0],
+                                timestamp: t,
+                                scaledReading: scales[c](readings[0]) + offset,
+                                scaledTime: scales.x(new Date(t)) + (paddingLeft-padding)
+                            });
+                        }else{ //erroneous
+                            if (!erroneous[c][s]){
+                                erroneous[c][s] = [];
+                            }
+                            erroneous[c][s].push(t);
+
+                            //push current stuff and reset array, if necessary
+                            if(!paths[c][s]){
+                                paths[c][s] = [];
+                            }
+                            if(tempPaths[c][s].length > 1){
+                                paths[c][s].push(tempPaths[c][s]);
+                                tempPaths[c][s] = [];
+                            }
                         }
                     }
                 }
             }
-        }
-        //push any remaining data
-        for(let c in tempPaths){
-            for(let s in tempPaths[c]){
-                if (!paths[c][s]) {
-                    paths[c][s] = [];
+            //push any remaining data
+            for(let c in tempPaths){
+                for(let s in tempPaths[c]){
+                    if (!paths[c][s]) {
+                        paths[c][s] = [];
+                    }
+                    if(tempPaths[c][s].length > 1){
+                        paths[c][s].push(tempPaths[c][s]);
+                    }
                 }
-                if(tempPaths[c][s].length > 1){
-                    paths[c][s].push(tempPaths[c][s]);
+            }
+
+            console.log(paths);
+
+            //plot chemical data
+            svg.selectAll('.overview-path').remove();
+            svg.selectAll('.overview-notification').remove();
+            // let c = 'Appluimonia';
+            for(let c in paths){
+                for(let s in paths[c]){
+                    for(let p of paths[c][s]){ //for every path
+                        let points = p.map((d) => { return new Vector(d.scaledTime,d.scaledReading)});
+                        console.log("points for",s,points)
+                        svg.append('path').datum(points)
+                            .classed('overview-path',true)
+                            .attr('id',s)
+                            .classed('inactive', s !== selectedSensor)
+                            .attr('d',line);
+                    }
+                }
+
+                for(let s in erroneous[c]){
+                    console.log(c,s,erroneous[c][s]);
+                    let [min,max] = scales[c].range();
+                    let offset = padding / 2 + (chemical_names.indexOf(c)) * graphSize + (chemical_names.indexOf(c))*graphPadding;
+                    [min,max] = [min+offset,max+offset]
+                    console.log(c, scales[c].domain(),scales[c].range());
+                    for(let dataPoint of erroneous[c][s]){
+                        let xPos = scales.x(new Date(dataPoint)) + (paddingLeft - padding)
+                        let notification = svg.append('path').classed('overview-notification', true).attr('id', s)
+                            .datum([new Vector(xPos, max), new Vector(xPos, min)])
+                            .attr('d', line).classed('inactive', s !== selectedSensor);
+                        tooltip.setEvents(notification, `${s} has an erroneous reading at ${dataPoint.timestamp}`);
+                    }
                 }
             }
         }
-
-        console.log(paths);
-
-        //plot chemical data
-        svg.selectAll('.overview-path').remove();
-        let c = 'Appluimonia';
-        // for(let c in paths){
-            for(let s in paths[c]){
-                for(let p of paths[c][s]){ //for every path
-                    let points = p.map((d) => { return new Vector(d.scaledTime,d.scaledReading)});
-                    console.log("points for",s,points)
-                    svg.append('path').datum(points)
-                        .classed('overview-path',true)
-                        .attr('id',s)
-                        .attr('d',line);
-                }
-            }
-        // }
         
     }
 

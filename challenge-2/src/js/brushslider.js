@@ -383,7 +383,7 @@ let TimeSlider = function(options){
                         let notification = svg.append('path').classed('delta-notification',true).attr('id',sensorName)
                             .datum([new Vector(dataPoint.scaledTimestamp,padding*0.9),new Vector(dataPoint.scaledTimestamp,h-padding)])
                             .attr('d',line).classed('inactive', sensorName !== selectedSensor);
-                            tooltip.setEvents(notification,`${sensorName} has a NaN reading at ${dataPoint.timestamp}`);
+                        tooltip.setEvents(notification,`${sensorName} has a NaN reading at ${dataPoint.timestamp}`);
                     }
                 }else{
                     //plot path data
