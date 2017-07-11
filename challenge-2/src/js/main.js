@@ -26,9 +26,17 @@ let Challenge2 = function(options){
         options.chemicalClickHandler = (chemicalName,sensorName) => {
             self.updateTimeSlider(undefined,sensorName,chemicalName);
         }
-        self.streamLineMap = new StreamlineGraph(options);
-        self.timeSlider = new TimeSlider(options);
         return loadData().then(function(){
+            if(options.timestamps){
+                let local_timestamps = getChemicalTimeStamps();
+                for(let t of local_timestamps){
+                    options.timestamps.push(t);
+                }
+            }
+
+
+            self.streamLineMap = new StreamlineGraph(options);
+            self.timeSlider = new TimeSlider(options);
             loadStreamlineMap();
             loadBrushSlider();
             // loadOSPs();

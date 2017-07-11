@@ -11,6 +11,7 @@ let TimeSlider = function(options){
         .attr('viewBox', `0 0 ${w} ${h}`).attr('preserveAspectRatio', `xMinYMin meet`);
     let scales = {}, axes = {};;
     let lines = [];
+    let brush;
     let verbose = options.verbose || false;
     const chemical_names = ['Appluimonia', 'Chlorodinine', 'Methylosmolene', 'AGOC-3A'];
 
@@ -95,13 +96,14 @@ let TimeSlider = function(options){
             .attr('x',padding).attr('y',padding);
 
         //draw indicator text
-        svg.append('text').classed('slider-text',true).attr('id','data-indicator')
-            .text('Chemical: chemical / Sensor: sensor').attr('x',padding).attr('y',padding*0.9);
+        let textIndicator = svg.append('foreignObject').classed('slider-text',true).attr('id','data-indicator')
+            .attr('width', w / 3).attr('height', padding * 0.9)
+            .text('Chemical: chemical / Sensor: sensor').attr('x',padding).attr('y',0);
+        tooltip.setEvents(textIndicator,`You can select time ranges here. The data shown is the delta (difference) of the readings of a given chemical and sensor over time`);
 
         //based on https://bl.ocks.org/mbostock/6232537
         drawAxes();
         drawRangeBrush();
-        
     };
 
     function drawAxes(){
@@ -285,13 +287,19 @@ let TimeSlider = function(options){
             updateTimeRange(brushRange[0], brushRange[1]);   
         }
         
-        let brush = d3.brushX()
+        brush = d3.brushX()
             .extent([[padding,padding],[w-padding,h-padding]])
             .on('end',brushended)
             .on('brush',onbrush);
+        let defaultRange = [
+            (new Date(2016,3,1)),
+            (new Date(2016,3,2))
+        ];
         svg.append('g')
             .classed('brush',true)
-            .call(brush);
+            .call(brush)
+            .call(brush.move, defaultRange.map((d) => { return scales.monthScales['April 2016'](d); }));
+        updateTimeRange(defaultRange[0],defaultRange[1],true);
     }
 
     function drawTimeStampSelector(time_stamp){
@@ -327,6 +335,13 @@ let TimeSlider = function(options){
         // selectedChemical = chemical;
         // selectedSensor = sensor;
         console.log("received",chemical,sensor,data);
+
+        if (sensor && sensor !== selectedSensor) {
+            selectedSensor = sensor;
+            svg.selectAll('.delta-notification').classed('inactive', true);
+            svg.selectAll('.delta-line').classed('inactive', true);
+            svg.selectAll(`#${selectedSensor}`).classed('inactive', false).raise();
+        }
 
         if(chemical && chemical !== selectedChemical){
             selectedChemical = chemical
@@ -383,8 +398,8 @@ let TimeSlider = function(options){
                         let sensorName = p.replace("-NaN","");
                         let notification = svg.append('path').classed('delta-notification',true).attr('id',sensorName)
                             .datum([new Vector(dataPoint.scaledTimestamp,padding*0.9),new Vector(dataPoint.scaledTimestamp,h-padding)])
-                            .attr('d',line).classed('hidden', sensorName !== selectedSensor);
-                        tooltip.setEvents(notification,`${p.replace("-NaN","")} has a NaN reading at ${dataPoint.timestamp}`);
+                            .attr('d',line).classed('inactive', sensorName !== selectedSensor);
+                            tooltip.setEvents(notification,`${sensorName} has a NaN reading at ${dataPoint.timestamp}`);
                     }
                 }else{
                     //plot path data
@@ -411,7 +426,7 @@ let TimeSlider = function(options){
                     //plot points by month
                     for(let arr of dataPoints){
                         svg.append('path').datum(arr)
-                            .classed('delta-line', true).classed('hidden', p !== selectedSensor)
+                            .classed('delta-line', true).classed('inactive', p !== selectedSensor)
                             .attr('id', p)
                             .attr('d', line);
                     }
@@ -420,16 +435,8 @@ let TimeSlider = function(options){
 
             console.log(paths);
         }
-        if (sensor && sensor !== selectedSensor) {
-            selectedSensor = sensor;
-            svg.selectAll('.delta-notification').classed('hidden',true);
-            svg.selectAll('.delta-line').classed('hidden',true);
-            svg.selectAll(`#${selectedSensor}`).classed('hidden',false).raise();
-        }
 
-        d3.select('#data-indicator')
-            .text(`Chemical: ${selectedChemical} / Sensor: ${selectedSensor}`);
-            
+        d3.select('#data-indicator').html(`Delta Slider | Chemical: <p class="${selectedChemical} data-indicator-text">${selectedChemical}</p> / Sensor: <p class=data-indicator-text>${selectedSensor}</p>`);
 
     }
 

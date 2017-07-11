@@ -183,11 +183,11 @@ path, line {
     opacity: 1;
 }
 
-.delta-line.hidden {
+.delta-line.inactive {
     stroke: grey;
     opacity: 0.1;
 }
-.delta-notification.hidden {
+.delta-notification.inactive {
     opacity: 0;
 }
 
@@ -291,4 +291,13 @@ text.legend-label {
 .timestamp-indicator {
     stroke: blue;
     opacity: 0.5;
+}
+
+.data-indicator {
+    font-size: 0.75vw;
+}
+
+.data-indicator-text {
+    font-size: 0.75vw;
+    display: inline;
 }

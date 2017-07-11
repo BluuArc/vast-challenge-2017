@@ -27,7 +27,7 @@
             <input id="timestamp-slider" type="range" value="0" style="max-width: 98%; margin:1%; height:20px; -webkit-appearance:none;"/>
             <div id="input-disabler"></div>
         </div>
-        <div class="row" style="/*display:none;*/">
+        <div class="row">
             <div class="svg-container" id="timestamp-brush-slider" style="border: 1px solid gray; background-color:white; margin-left: 1%; margin-right: 1%;">
             </div>
         </div>
@@ -106,12 +106,13 @@
     </div>
     <div id="loading-indicator" class="loading"></div>
     <script>
-        let timestamps,timestamp_slider;
+        let timestamps = [],timestamp_slider = d3.select('#timestamp-slider');;
         let old_val;
         let start_index,end_index;
         let options = {
             verbose: true,
-            jumpToTimeStamp: jumpToTimeStamp
+            jumpToTimeStamp: jumpToTimeStamp,
+            timestamps: timestamps
         };
         let selectedChemical = 'AGOC-3A';
         let selectedSensor = 'sensor1';
@@ -265,8 +266,7 @@
         startWait();
         let challenge2 = new Challenge2(options);
         challenge2.init().then(function(){
-            timestamps = challenge2.getChemicalTimeStamps();
-            timestamp_slider = d3.select('#timestamp-slider');
+            // timestamps = challenge2.getChemicalTimeStamps();
             timestamp_slider.attr('max',timestamps.length-1);
             timestamp_slider.on('input',updateStreamLine);
             updateStreamLine(); //set streamline graph to show data for first timestamp
