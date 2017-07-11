@@ -411,7 +411,7 @@ let TimeSlider = function(options){
                     for(let arr of dataPoints){
                         svg.append('path').datum(arr)
                             .classed('delta-line', true).classed('inactive', p !== selectedSensor)
-                            .attr('id', p)
+                            .attr('id', p).classed(selectedChemical,true)
                             .attr('d', line);
                     }
                 }

@@ -178,9 +178,9 @@ path, line {
     stroke-linecap: round;
 }
 
-.delta-line, .overview-path {
+.delta-line,.overview-path {
     fill: none;
-    stroke: black;
+    /*stroke: black;*/
     opacity: 1;
 }
 
@@ -273,13 +273,15 @@ text.legend-title {
     font-size: x-small;
     text-anchor: middle;
     fill: black;
-    stroke: black;
+    stroke: none;
+    stroke-width: none;
 }
 
 text.legend-label {
     font-size: xx-small;
     fill: black;
-    stroke: black;
+    stroke: none;
+    stroke-width: none;
 }
 
 .tick-minor {

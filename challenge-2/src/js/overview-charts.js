@@ -214,7 +214,7 @@ let ChemicalOverviewChart = function(options){
                         console.log("points for",s,points)
                         svg.append('path').datum(points)
                             .classed('overview-path',true)
-                            .attr('id',s)
+                            .attr('id',s).classed(c,true)
                             .classed('inactive', s !== selectedSensor)
                             .attr('d',line);
                     }
