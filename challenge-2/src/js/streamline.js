@@ -554,7 +554,7 @@ let PixelSensor = function(parent,position,sensorNumber, options){
             .attr('r', quadrantSize * 0.25)
             .classed('sensor-label-overlay',true);
         self.graph.append('text').classed('sensor-label', true)
-            .attr('x', center.x).attr('y', center.y)
+            .attr('x', center.x).attr('y', center.y+0.5)
             .text(sensorNumber)
             .attr('text-anchor', 'middle')
             .attr('alignment-baseline', 'middle');

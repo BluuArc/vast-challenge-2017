@@ -93,21 +93,21 @@ path, line {
 }*/
 
 .Appluimonia {
-    fill: #ca0020;
-    stroke: #ca0020;
-    color: #ca0020;
+    fill: #1b9e77;
+    stroke: #1b9e77;
+    color: #1b9e77;
 }
 
 .Chlorodinine {
-    fill: #0571b0;
-    stroke: #0571b0;
-    color: #0571b0;
+    fill: #d95f02;
+    stroke: #d95f02;
+    color: #d95f02;
 }
 
 .Methylosmolene {
-    fill: #B15928;
-    stroke: #B15928;
-    color: #B15928;
+    fill: #7570b3;
+    stroke: #7570b3;
+    color: #7570b3;
 }
 
 .AGOC-3A {
@@ -188,7 +188,7 @@ path, line {
     stroke: grey;
     opacity: 0.1;
 }
-.delta-notification.inactive {
+.delta-notification.inactive,.overview-notification.inactive {
     opacity: 0;
 }
 

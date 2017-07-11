@@ -59,7 +59,7 @@ let ChemicalOverviewChart = function(options){
             })(scales[c].domain()));
             //vertical
             group.append('g').classed('axis',true).attr('id',c)
-                .attr('transform',`translate(${paddingLeft},${top})`)
+                .attr('transform',`translate(${paddingLeft-0.5},${top})`)
                 .classed('overview-axis',true)
                 .call(axes[c]);
 
@@ -73,7 +73,7 @@ let ChemicalOverviewChart = function(options){
             //horizontal
             group.append('g').classed('axis', true).attr('id', c)
                 .classed('time-axis', true)
-                .attr('transform', `translate(${paddingLeft - padding},${top + graphSize})`)
+                .attr('transform', `translate(${paddingLeft - padding-0.5},${top + graphSize})`)
                 .classed('overview-axis', true)
                 .call(axes[`${c}-horizontal`]);
 
@@ -111,8 +111,8 @@ let ChemicalOverviewChart = function(options){
         if(sensor && sensor !== selectedSensor){
             selectedSensor = sensor;
             console.log("updating sensor to",selectedSensor);
-            svg.selectAll('.overview-notification').classed('inactive',true);
             svg.selectAll('.overview-path').classed('inactive',true);
+            svg.selectAll('.overview-notification').classed('inactive',true);
             svg.selectAll(`#${selectedSensor}`).classed('inactive',false).raise();
         }
 
@@ -228,20 +228,22 @@ let ChemicalOverviewChart = function(options){
                     console.log(c, scales[c].domain(),scales[c].range());
                     for(let dataPoint of erroneous[c][s]){
                         let xPos = scales.x(new Date(dataPoint)) + (paddingLeft - padding)
-                        let notification = svg.append('path').classed('overview-notification', true).attr('id', s)
+                        let notification = svg.append('path').classed('overview-notification', true)
+                            .attr('id', s).classed('inactive', s !== selectedSensor)
                             .datum([new Vector(xPos, max), new Vector(xPos, min)])
-                            .attr('d', line).classed('inactive', s !== selectedSensor);
-                        tooltip.setEvents(notification, `${s} has an erroneous reading at ${dataPoint.timestamp}`);
+                            .attr('d', line);
+                        tooltip.setEvents(notification, `${s} has an erroneous reading at ${dataPoint}`);
                     }
                 }
             }
+            svg.selectAll(`#${selectedSensor}`).raise();
         }
         
     }
 
     function updateTimeSelector(time_stamp){
         console.log("updateTimeSelector",time_stamp);
-        let xPos = scales.x(new Date(time_stamp)) + (paddingLeft-padding)+1;
+        let xPos = scales.x(new Date(time_stamp)) + (paddingLeft-padding);
         svg.selectAll('.timestamp-indicator').remove();
         svg.append('path').classed('timestamp-indicator', true)
             .datum([new Vector(xPos, graphPadding), new Vector(xPos, (h - padding)+5)])

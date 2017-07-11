@@ -418,6 +418,7 @@ let TimeSlider = function(options){
             }
 
             console.log(paths);
+            svg.selectAll(`#${selectedSensor}`).raise();
         }
 
         d3.select('#data-indicator').html(`Delta Slider | Chemical: <p class="${selectedChemical} data-indicator-text">${selectedChemical}</p> / Sensor: <p class=data-indicator-text>${selectedSensor}</p>`);
