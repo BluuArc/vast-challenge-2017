@@ -201,9 +201,6 @@ g.axis {
     /*fill: white;*/
 }
 
-.slider-text {
-    font-size: 0.70vw;
-}
 
 div.tooltip#vis {
     position: absolute;
@@ -293,11 +290,10 @@ text.legend-label {
     opacity: 0.5;
 }
 
-.data-indicator {
-    font-size: 0.75vw;
+.slider-text,.data-indicator, .data-indicator-text {
+    font-size: x-small;
 }
 
 .data-indicator-text {
-    font-size: 0.75vw;
     display: inline;
 }

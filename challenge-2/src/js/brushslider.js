@@ -97,7 +97,7 @@ let TimeSlider = function(options){
 
         //draw indicator text
         let textIndicator = svg.append('foreignObject').classed('slider-text',true).attr('id','data-indicator')
-            .attr('width', w / 3).attr('height', padding * 0.9)
+            .attr('width', w).attr('height', padding * 0.9)
             .text('Chemical: chemical / Sensor: sensor').attr('x',padding).attr('y',0);
         tooltip.setEvents(textIndicator,`You can select time ranges here. The data shown is the delta (difference) of the readings of a given chemical and sensor over time`);
 

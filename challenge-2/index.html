@@ -23,7 +23,7 @@
     <div class="tooltip" id="vis"></div>
     <div class="container-fluid">
         <!--Main Slider-->
-        <div class="row">
+        <div class="row" style="display: none;">
             <input id="timestamp-slider" type="range" value="0" style="max-width: 98%; margin:1%; height:20px; -webkit-appearance:none;"/>
             <div id="input-disabler"></div>
         </div>
@@ -236,6 +236,7 @@
             let sliderDiv = d3.select('#timestamp-brush-slider');
             sliderDiv.classed('disabled',true);
             sliderDiv.selectAll('*').classed('disabled',true);
+            sliderDiv.select('foreignObject').selectAll('*').classed('disabled',false);
 
             // start_index = +(timestamp_slider.node().value);
 

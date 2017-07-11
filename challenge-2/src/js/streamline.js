@@ -470,6 +470,7 @@ let StreamlineGraph = function (options) {
 
     function drawStreamlinePath(factory,points){
         svg.selectAll(`#${factory.id}-streamline`).remove();
+        svg.selectAll(`#${factory.id}-streamline-mouseover`).remove();
         svg.append('path').attr('id',`${factory.id}-streamline`).classed(`${factory.id}`,true)
             .datum(points).attr('d',line).attr('style','fill: none; pointer-events:none;');
         let path = svg.append('path').attr('id', `${factory.id}-streamline-mouseover`).classed(`${factory.id}`, true).classed(`diffusion-mouseover`, true)
