@@ -25,7 +25,7 @@
     <div class="tooltip" id="vis"></div>
     <div class="container-fluid">
         <div class="row" style="text-align:center">
-            <b><a href="http://vacommunity.org/VAST+Challenge+2017">VAST Challenge 2017</a> - <a href="http://vacommunity.org/VAST+Challenge+2017+MC2">Mini Challenge 2</a> by Joshua Castor and Joseph Boriwicz</b>
+            <b><a href="http://vacommunity.org/VAST+Challenge+2017">VAST Challenge 2017</a> - <a href="http://vacommunity.org/VAST+Challenge+2017+MC2">Mini Challenge 2</a> by Joshua Castor and Joseph Borowicz</b>
         </div>
         <!--Main Slider-->
         <div class="row" style="display: none;">
@@ -41,12 +41,15 @@
             <!--Time Range Info-->
             <div class="col-md-5">
                 <div class="row" style="text-align:center">
+                    <b style="font-size:0.95vw">General Info</b>
+                </div>
+                <div class="row" style="text-align:center">
                     <div class="col-md-4">
                         <b style="font-size:1vw;">Focus:</b>
                         <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="The left represents the chemical that is being focused on in the delta slider. The right represents the sensor whose data is being shown in the delta slider and chemical reading overview"></span>
                     </div>
                     <b class="col-md-4" style="font-size:1vw;" id="focus-chemical">Chemical</b>
-                    <p class="col-md-4" style="font-size:1vw;" id="focus-sensor">sensor1</p>
+                    <p class="col-md-4" style="font-size:1vw;" id="focus-sensor">Sensor 1</p>
                 </div>
                 <div class="row" style="text-align:center">
                     <div class="col-md-4">
@@ -55,6 +58,13 @@
                     </div>
                     <p class="col-md-4" style="font-size:1vw;" id="time-range-start">some date</p>
                     <p class="col-md-4" style="font-size:1vw;" id="time-range-end">some other date</p>
+                </div>
+                <div class="row" style="text-align:center">
+                    <div class="col-md-4">
+                        <b style="font-size:1vw;">Wind Source:</b>
+                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="Tells which wind data point is being shown or which two points that the wind data is being interpolated"></span>
+                    </div>
+                    <div class="col-sm-8" id="wind-indicator" style="text-align:center;font-size:1vw;">---</div>
                 </div>
             </div>
             <!--Time Step Controls-->
@@ -70,7 +80,7 @@
             </div>
             <!--Streamline Map Controls-->
             <div class="col-md-5">
-                <p class="row"><b>Streamline Graph Controls</b> <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="right" title="If the simulation is started, the streamlines from each factory are calculated at every time step based on the current configuration"></span></p>
+                <p class="row" style="text-align:center;"><b>Streamline Graph Controls</b> <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="right" title="If the simulation is started, the streamlines from each factory are calculated at every time step based on the current configuration"></span></p>
                 <button onclick="toggleSimulation()" id="simToggle" style="margin: 0;" class="row btn btn-block btn-lg btn-primary">Click to Start the Simulation of Chemical Streamlines</button>
                 <div class="row">
                     <!--Interpolation Method-->
@@ -104,7 +114,7 @@
                     <div class="col-md-8">
                         <div class="row">
                             <div class="col-sm-4" style="text-align:center">Using wind data from:</div>
-                            <div class="col-sm-8" id="wind-indicator" style="text-align:center;">---</div>
+                            <!--<div class="col-sm-8" id="wind-indicator" style="text-align:center;">---</div>-->
                         </div>
                     </div>
 

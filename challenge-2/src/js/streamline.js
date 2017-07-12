@@ -633,6 +633,7 @@ let PixelSensor = function(parent,position,sensorNumber, options){
             let domain = scales[chemical].domain();
             let content = `<b class="${chemical}">${chemical}</b><br>`
             content += `<b>Reading:</b> ${value} ppm`;
+            content += `<br>Click this quadrant to change focus to <b class=${chemical}>${chemical}</b> and <b>sensor${sensorNumber}</b>`;
             // content += `<br><b>Overall Min:</b> ${domain[0]}<br><b>Overall Max:</b> ${domain[1]}`;
             tooltip.setContent(content);
             tooltip.showAt(d3.event.pageX,d3.event.pageY);
@@ -779,8 +780,9 @@ let StreamlineLegend = function(parent,position,options){
             .attr('width',(10)*2).attr('height',(10)*2)
             .classed('legend-mouseover',true);
         tooltip.setEvents(pixelSensorMouseOver,'Each quadrant represents a chemical and the opacity of each quadrant represents a chemical reading.<br><br>A lighter color represents a lower reading and a more vivid color represents a higher reading.');
-        container.append('text').text("Sensor Location").classed('legend-label',true)
+        let pixelSensorDescription = container.append('text').text("Sensor Location").classed('legend-label',true)
             .attr('x',35).attr('y',65+3);
+        tooltip.setEvents(pixelSensorDescription,`The center of each sensor is the location of the sensor on the map`);
 
         let chemicalGroup = container.append('g').attr('transform','translate(10,85)');
         let bucketWidth = 1, bucketHeight = 5, numBuckets = 20;

@@ -327,7 +327,7 @@ let TimeSlider = function(options){
             svg.selectAll('.delta-notification').classed('inactive', true);
             svg.selectAll('.delta-line').classed('inactive', true);
             svg.selectAll(`#${selectedSensor}`).classed('inactive', false).raise();
-            sensor_indicator.text(selectedSensor);
+            sensor_indicator.text(`Sensor ${selectedSensor.split('sensor')[1]}`);
 
             d3.selectAll('g.pixel-sensor').selectAll('.sensor-label-overlay').classed('inactive',true);
             d3.selectAll(`g#pixel-sensor-${selectedSensor.split('sensor')[1]}`)

@@ -542,14 +542,14 @@ let Challenge2 = function(options){
 
             }
 
-            // if(isSimulating && result){
-                if(verbose) console.log("Result",result);
-                // if(result.time){
-                // }
-            // }
+            if(verbose) console.log("Result",result);
             
             if (windModes[self.windModeIndex] !== 'interpolate'){
-                updateWindIndicator(`${ convertDateToTimeStamp(result.time) || "Error"}`);
+                if(data && result){
+                    updateWindIndicator(`${ convertDateToTimeStamp(result.time) || "Error"}`);
+                }else{
+                    updateWindIndicator(`No wind data found at nor near ${time}`);
+                }
                 self.streamLineMap.updateWindGlyph(data, (data && result) ? convertDateToTimeStamp(result.time) : time, isSimulating);
             }
             
@@ -658,7 +658,7 @@ let Challenge2 = function(options){
 
     self.stopSimulation = function(){
         isSimulating = false;
-        d3.select('#wind-indicator').text("---");
+        // d3.select('#wind-indicator').text("---");
         self.streamLineMap.setSimulationMode(false);
     }
 
