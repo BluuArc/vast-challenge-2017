@@ -75,13 +75,19 @@
                 </div>
                 <div class="row">
                     <div class="col-md-2" style="text-align:center">
+                        <b style="font-size:1vw;">Legend Toggle:</b>
+                    </div>
+                    <div class="col-md-4">
+                        <button onclick="toggleLegend()" id="legendToggle" style="margin: 0;" class="btn btn-block btn-lg btn-primary">Hide Legend</button>
+                    </div>
+                    <div class="col-md-2" style="text-align:center">
                         <b style="font-size:1vw;">Diffusion Rate:</b>
                     </div>
-                    <div class="col-md-2">
-                        <input id="diffusion-rate" type="number" min="0" max="1" value="0.05" step="0.001" style="text-align:center;">
+                    <div class="col-md-3">
+                        <input id="diffusion-rate" type="number" min="0" max="1" value="0.05" step="0.001" style="text-align:center; display:table-cell; width:100%;">
                     </div>
-                    <div class="col-md-8">
-                        
+                    <div class="col-md-1" style="text-align:center">
+                        <p style="font-size:1vw;">mph</p>
                     </div>
 
                 </div>
@@ -264,6 +270,26 @@
                     toggle.classed('btn-warning', false);
                     toggle.text("Start Simulating Chemical Streamlines");
                     stopSimulation();
+                }
+            }catch(err){
+                alert(`${err}`);
+            }
+        }
+
+        function toggleLegend(){
+            let toggle = d3.select('#legendToggle');
+            let legend = d3.select('.streamline-legend');
+            try{
+                if(toggle.classed('btn-primary')){ //hide
+                    legend.style('display','none');
+                    toggle.classed('btn-primary',false);
+                    toggle.classed('btn-warning', true);
+                    toggle.text("Show Legend");
+                }else{
+                    legend.style('display', null);
+                    toggle.classed('btn-warning', false);
+                    toggle.classed('btn-primary', true);
+                    toggle.text("Hide Legend");
                 }
             }catch(err){
                 alert(`${err}`);
