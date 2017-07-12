@@ -299,6 +299,7 @@ text.legend-label {
 .timestamp-indicator {
     stroke: blue;
     opacity: 0.5;
+    pointer-events: none;
 }
 
 .slider-text,.data-indicator, .data-indicator-text {
@@ -311,4 +312,24 @@ text.legend-label {
 
 .graph-title{
     font-size: small;
+}
+
+.glyph-mouseover {
+    fill: transparent;
+    stroke: none;
+}
+
+.glyph-mouseover.error {
+    fill: red;
+    opacity: 0.3;
+}
+
+.glyph-mouseover.warning {
+    fill: orange;
+    opacity: 0.3;
+}
+
+.glyph-mouseover:hover {
+    fill: gray;
+    opacity: 0.25;
 }

@@ -27,7 +27,8 @@ let StreamlineGraph = function (options) {
     let svg = d3.select('#streamline-graph').append('svg').classed('svg-content', true)
         .attr('viewBox', `0 0 ${w} ${h}`).attr('preserveAspectRatio', `xMinYMin meet`);
     let scales = {};
-    let windGlyphs = [], legend;
+    let windGlyphs = [];
+    let windGlyph,legend;
     let isSimulating = false;
     let windVectors = [], timeStamps = [];
     let diffusion_rate = 0.005;
@@ -132,7 +133,7 @@ let StreamlineGraph = function (options) {
 
         drawFactories();
         drawSensors();
-        drawWindGlyphs();
+        drawWindGlyph();
 
         legend = new StreamlineLegend(svg,new Vector(250,270),{
             factoryConstructor: (parent) => {
@@ -156,7 +157,7 @@ let StreamlineGraph = function (options) {
         legend.init();
     };
 
-    function drawWindGlyphs() {
+    function drawWindGlyph() {
         //based off of https://codepen.io/zxhfighter/pen/wWKqqX 
         svg.append('defs').append('marker')
             .attr('id', 'arrow')
@@ -169,16 +170,24 @@ let StreamlineGraph = function (options) {
         svg.select('#arrow').append('path')
             .attr('d', 'M2,2 L10,6 L2,10 L6,6 L2,2')
             .classed('wind-glyph', true);
-
-        svg.append('line')
-            .attr("x1", 0)
-            .attr("y1", 1)
-            .attr("x2", 0)
-            .attr("y2", 0)
+        let group = svg.append('g').classed('wind-glyph', true).attr('id', 'main')
+            .attr('transform', `translate(${w * 0.15},${h * 0.1})`);
+        windGlyph = {
+            group: group,
+            mouseover: group.append('rect').classed('glyph-mouseover',true)
+                .attr('width',12).attr('height',12)
+                .attr('x',-12/2).attr('y',-12/2)
+                .attr('fill','transparent'),
+            glyph: group.append('line')
+            .attr("x1", 0).attr("y1", 1)
+            .attr("x2", 0).attr("y2", 0)
             .attr("marker-end", "url(#arrow)")
-            .attr('transform', `translate(${w*0.9},${h*0.1}) scale(2)`)
-            .classed('wind-glyph', true)//.classed('hide', true);
+            .attr('transform', `scale(2)`)
+            .classed('wind-glyph', true).attr('id','glyph'),
+            transformation: `translate(${w * 0.15},${h * 0.1})`,
+        }
 
+        /*
         let group = svg.append('g');
 
         for (let i = 1; i < 4; ++i) {
@@ -198,6 +207,7 @@ let StreamlineGraph = function (options) {
                 });
             }
         }
+        */
     }
 
     function drawFactories(){
@@ -243,6 +253,7 @@ let StreamlineGraph = function (options) {
         });
     }
 
+    //reset variables as necessary
     self.setSimulationMode = function(bool,data,time_stamp,diffusionRate){
         isSimulating = bool;
 
@@ -257,9 +268,9 @@ let StreamlineGraph = function (options) {
             }
         }
 
-        for(let arrow of windGlyphs){
-            arrow.glyph.classed('hide',bool !== true);
-        }
+        // for(let arrow of windGlyphs){
+        //     arrow.glyph.classed('hide',bool !== true);
+        // }
 
         if(!bool){
             for(let f of factories){
@@ -288,6 +299,37 @@ let StreamlineGraph = function (options) {
         }
     }
 
+    //wind is an array where each index object has keys direction and speed
+    self.updateWindGlyph = function(wind,time_stamp_msg,isSimulating){
+        function convertMetersPerSecToMilesPerHour(metersPerSec) {
+            // 1m/s= 2.236936mph
+            return metersPerSec * 2.236936;
+        }
+        console.log("entered updateWindGlyph",arguments);
+        if(!wind || wind.length === 0){
+            windGlyph.group.selectAll('*').classed('error', true);
+            let msg = `No wind data found for ${time_stamp_msg}. `;
+            if(isSimulating){
+                msg += `No data will be added to simulation calculations.`;
+            }
+            tooltip.setEvents(windGlyph.group, msg);
+        }else{
+            let rotationAngle = wind[0].direction;
+            console.log("rotation",rotationAngle);
+            let msg = "";
+            windGlyph.group.attr('transform',`${windGlyph.transformation} rotate(${rotationAngle+180})`)
+            windGlyph.group.selectAll('*').classed('error',false).classed('warning',false);
+            msg += `<b>Time Stamp:</b> ${time_stamp_msg}`;
+            msg += `<br><b>Wind Speed:</b> ${convertMetersPerSecToMilesPerHour(wind[0].speed).toFixed(2)} mph`;
+            msg += `<br><b>Wind Direction:</b> ${((rotationAngle+180)%360).toFixed(2)} degrees (0/360 is North)`;
+            if (wind.length > 1) {
+                windGlyph.group.selectAll('*').classed('warning', true);
+                msg += `<br><b>Note:</b> Multiple wind readings found. Using first reading.`;
+            }
+            tooltip.setEvents(windGlyph.group,msg);
+        }
+    }
+
     //data input is an object with 2 keys: wind and chemical
     //chemical has keys sensor1,sensor2,...,sensor9
     //each sensor object has 4 arrays, each keyed by chemical name
@@ -299,20 +341,22 @@ let StreamlineGraph = function (options) {
         if(!data.wind || data.wind.length === 0){
             if(isSimulating && render){
                 d3.select('#wind-indicator').text("No wind data found for current time stamp");
-                for (let arrow of windGlyphs) {
-                    arrow.glyph.classed('hide',true);
-                }
+                // for (let arrow of windGlyphs) {
+                //     arrow.glyph.classed('hide',true);
+                // }
+                // windGlyph.glyph.classed('error',true);
+                // tooltip.setEvents(windGlyph.glyph,`No wind data found for ${time_stamp}. No data will be added to simulation if simulation is running.`);
             }
         }else{
             let windData = data.wind;
 
             let rotationAngle = windData[0].direction;
             console.log("Updating wind");
-            for (let arrow of windGlyphs) {
-                arrow.glyph.attr('transform', `${arrow.transformation} rotate(${rotationAngle+180})`).classed('hide',false);
-            }
+            // for (let arrow of windGlyphs) {
+            //     arrow.glyph.attr('transform', `${arrow.transformation} rotate(${rotationAngle+180})`).classed('hide',false);
+            // }
             if (windData.length > 1) {
-                d3.select('#wind-indicator').text("Multiple wind readings found for current time stamp. Using first reading.");
+                d3.select('#wind-indicator').text("Multiple wind readings found for ${time_stamp}. Using first reading.");
             }
             if(isSimulating){
                 if(difference > 0){

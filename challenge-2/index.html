@@ -43,7 +43,7 @@
                 <div class="row" style="text-align:center">
                     <div class="col-md-4">
                         <b style="font-size:1vw;">Focus:</b>
-                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="right" title="The left represents the chemical that is being focused on in the delta slider. The right represents the sensor whose data is being shown in the delta slider and chemical reading overview"></span>
+                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="The left represents the chemical that is being focused on in the delta slider. The right represents the sensor whose data is being shown in the delta slider and chemical reading overview"></span>
                     </div>
                     <b class="col-md-4" style="font-size:1vw;" id="focus-chemical">Chemical</b>
                     <p class="col-md-4" style="font-size:1vw;" id="focus-sensor">sensor1</p>
@@ -51,7 +51,7 @@
                 <div class="row" style="text-align:center">
                     <div class="col-md-4">
                         <b style="font-size:1vw;">Time Range:</b>
-                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="right" title="The left and right show the start and end, respectively, of the delta slider and the axes on the chemical reading overview"></span>
+                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="The left and right show the start and end, respectively, of the delta slider and the axes on the chemical reading overview"></span>
                     </div>
                     <p class="col-md-4" style="font-size:1vw;" id="time-range-start">some date</p>
                     <p class="col-md-4" style="font-size:1vw;" id="time-range-end">some other date</p>
@@ -79,16 +79,16 @@
                     </div>
                     <div class="col-md-10">
                         <div id="interpolation-method" class="btn-group-justified" data-toggle="buttons">
-                            <label class="btn btn-primary active">
+                            <label onclick="changeInterpolationMode(0)" class="btn btn-primary active">
                                 <input type="radio" name="interpolation-options" value="0" autocomplete="off" checked>Last
                             </label>
-                            <label class="btn btn-primary">
+                            <label onclick="changeInterpolationMode(1)" class="btn btn-primary">
                                 <input type="radio" name="interpolation-options" value="1" autocomplete="off">Next
                             </label>
-                            <label class="btn btn-primary">
+                            <label onclick="changeInterpolationMode(2)" class="btn btn-primary">
                                 <input type="radio" name="interpolation-options" value="2" autocomplete="off">Closest
                             </label>
-                            <label class="btn btn-primary">
+                            <label onclick="changeInterpolationMode(3)" class="btn btn-primary">
                                 <input type="radio" name="interpolation-options" value="3" autocomplete="off">Interpolate
                             </label>
                         </div>
@@ -230,6 +230,11 @@
             challenge2.updateOverviewCharts(startDate,endDate);
         }
 
+        function changeInterpolationMode(value){
+            console.log("interpolation value", value)
+            challenge2.changeInterpolationMode(value, timestamps[timestamp_slider.node().value]);
+        }
+
         function toggleSimulation(){
             let toggle = d3.select('#simToggle');
             try{
@@ -297,6 +302,7 @@
             challenge2.updateTimeSlider(undefined,selectedSensor,selectedChemical);
             old_val = timestamp_slider.node().value;
             $('[data-toggle="tooltip"]').tooltip(); 
+            changeInterpolationMode(0);
             console.log("Ready");
             endWait();
         }); 

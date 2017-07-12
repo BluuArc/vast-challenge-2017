@@ -43,17 +43,6 @@ let Challenge2 = function(options){
             loadBrushSlider();
             // loadOSPs();
 
-            //populate interpolation dropdown
-            d3.select('#interpolation-mode').html(`${windModes[0]}<span class="caret"></span>`).attr('value',0);
-            let interpolation_dropdown = d3.select('#interpolation-mode-options');
-            for(let w = 0; w < windModes.length; ++w)
-                interpolation_dropdown.append('li').append('a')
-                    .attr('href','#').html(`${windModes[w]}`)
-                    .on('click',function(){
-                        d3.select('#interpolation-mode').attr('value', w).html(`${windModes[w]}<span class="caret"></span>`);
-                    });
-                // interpolation_dropdown.append('option')
-                // .text(w);
             return;
         });
     }
@@ -276,19 +265,7 @@ let Challenge2 = function(options){
                         if(verbose) console.log("Error: Time entry", curDate, "doesn't exist");
                     }
 
-                    
-
-                    //update statistic info
-                    // let statEntry = statistics.chemical[c.Chemical];
                     let value = parseFloat(c.Reading);
-                    // if(!isNaN(value)){
-                    //     statEntry.max = (value > statEntry.max) ? value : statEntry.max;
-                    //     statEntry.min = (value < statEntry.min) ? value : statEntry.min;
-                    //     statEntry.amount++;
-                    // }else{
-                    //     if(verbose) console.log("Possibly erroneous chemical value", c);
-                    // }
-
                     timeEntry[`sensor${c.Monitor}`][c.Chemical].push(value);
                 }
 
@@ -435,8 +412,6 @@ let Challenge2 = function(options){
         self.overviewChart.init(options);
     }
 
-
-
     function convertDateToTimeStamp(date){
         return `${date.getMonth()+1}/${date.getDate()}/${date.getFullYear() % 1000} ${date.getHours()}:00`;
     }
@@ -495,7 +470,8 @@ let Challenge2 = function(options){
         if(verbose) console.log("Requesting wind for",time);
         
         if (self.data.wind[time] && self.data.wind[time].length > 0){
-            if(isSimulating) updateWindIndicator(convertDateToTimeStamp(new Date(time)));
+            updateWindIndicator(convertDateToTimeStamp(new Date(time)));
+            self.streamLineMap.updateWindGlyph(self.data.wind[time],time, isSimulating);
             return self.data.wind[time];
         }else{
             if(verbose) console.log("No valid entry directly at",time);
@@ -554,6 +530,7 @@ let Challenge2 = function(options){
 
 
                     updateWindIndicator(`${convertDateToTimeStamp(prev.time)} and ${convertDateToTimeStamp(next.time)}`);
+                    self.streamLineMap.updateWindGlyph(data, `between ${convertDateToTimeStamp(prev.time)} and ${convertDateToTimeStamp(next.time)}`,isSimulating);
                     result = {};
                 }else if(prev && prev.data){
                     data = prev.data;
@@ -565,12 +542,17 @@ let Challenge2 = function(options){
 
             }
 
-            if(isSimulating && result){
+            // if(isSimulating && result){
                 if(verbose) console.log("Result",result);
-                if(result.time){
-                    updateWindIndicator(`${ convertDateToTimeStamp(result.time) || "Error"}`);
-                }
+                // if(result.time){
+                // }
+            // }
+            
+            if (windModes[self.windModeIndex] !== 'interpolate'){
+                updateWindIndicator(`${ convertDateToTimeStamp(result.time) || "Error"}`);
+                self.streamLineMap.updateWindGlyph(data, (data && result) ? convertDateToTimeStamp(result.time) : time, isSimulating);
             }
+            
 
             return data;
         }
@@ -678,5 +660,10 @@ let Challenge2 = function(options){
         isSimulating = false;
         d3.select('#wind-indicator').text("---");
         self.streamLineMap.setSimulationMode(false);
+    }
+
+    self.changeInterpolationMode = function(value,time_stamp){
+        self.windModeIndex = value;
+        getWindDataAtTimeStamp(time_stamp);
     }
 };
