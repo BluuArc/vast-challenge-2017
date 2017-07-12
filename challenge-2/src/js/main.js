@@ -11,7 +11,7 @@ let Challenge2 = function(options){
     function loadCSV(filename){
         return new Promise(function(fulfill,reject){
             d3.csv(filename,function(data){
-                // if(verbose) console.log(data);
+                if(verbose) console.log(data);
                 fulfill(data);
             });
         });
@@ -279,20 +279,20 @@ let Challenge2 = function(options){
                     
 
                     //update statistic info
-                    let statEntry = statistics.chemical[c.Chemical];
+                    // let statEntry = statistics.chemical[c.Chemical];
                     let value = parseFloat(c.Reading);
-                    if(!isNaN(value)){
-                        statEntry.max = (value > statEntry.max) ? value : statEntry.max;
-                        statEntry.min = (value < statEntry.min) ? value : statEntry.min;
-                        statEntry.amount++;
-                    }else{
-                        if(verbose) console.log("Possibly erroneous chemical value", c);
-                    }
+                    // if(!isNaN(value)){
+                    //     statEntry.max = (value > statEntry.max) ? value : statEntry.max;
+                    //     statEntry.min = (value < statEntry.min) ? value : statEntry.min;
+                    //     statEntry.amount++;
+                    // }else{
+                    //     if(verbose) console.log("Possibly erroneous chemical value", c);
+                    // }
 
                     timeEntry[`sensor${c.Monitor}`][c.Chemical].push(value);
                 }
 
-                //generate delta entries
+                //generate delta entries and chemical statistic entries
                 for(let c in chemical){
                     let curDate = new Date(c);
                     if (!delta[`${curDate.getMonth() + 1}/1/${curDate.getFullYear() % 1000} 0:00`]) {
@@ -308,6 +308,30 @@ let Challenge2 = function(options){
 
                     calculateDelta(prevTimeEntry,chemical[c],timeEntry, statistics.delta);
 
+                    for(let s in chemical[c]){
+                        for(let chem in chemical[c][s]){
+                            if(chemical[c][s][chem].length === 1){
+                                let statEntry = statistics.chemical[chem];
+                                let value = parseFloat(chemical[c][s][chem][0]);
+                                if (!isNaN(value)) {
+                                    if(value > statEntry.max){
+                                        statEntry.max = value;
+                                        statEntry.maxTimeStamp = c;
+                                    }
+
+                                    if(value < statEntry.min){
+                                        statEntry.min = value;
+                                        statEntry.minTimeStamp = c;
+                                    }
+                                    // statEntry.max = (value > statEntry.max) ? value : statEntry.max;
+                                    // statEntry.min = (value < statEntry.min) ? value : statEntry.min;
+                                    statEntry.amount++;
+                                } else {
+                                    if (verbose) console.log("Possibly erroneous chemical value", c);
+                                }
+                            }
+                        }
+                    }
 
                     prevTimeEntry = chemical[c];
                 }
@@ -399,6 +423,13 @@ let Challenge2 = function(options){
                 'AGOC-3A': self.data.chemical._statistics['AGOC-3A'].scale,
                 wind: self.data.wind._statistics.scale
             },
+            statistics: {
+                Appluimonia: self.data.chemical._statistics.Appluimonia,
+                Chlorodinine: self.data.chemical._statistics.Chlorodinine,
+                Methylosmolene: self.data.chemical._statistics.Methylosmolene,
+                'AGOC-3A': self.data.chemical._statistics['AGOC-3A'],
+                wind: self.data.wind._statistics
+            }
         };
         console.log("Started initialization of overview map");
         self.overviewChart.init(options);

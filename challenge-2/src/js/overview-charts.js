@@ -45,13 +45,13 @@ let ChemicalOverviewChart = function(options){
             .attr('text-anchor','middle').classed('graph-title',true)
             .attr('x',w/2).attr('y',padding);
 
-        drawAxes();
+        drawAxes(options.statistics);
 
         updateTimeScale("4/1/16 0:00", "4/2/16 0:00");
         console.log(scales);
     };
 
-    function drawAxes(){
+    function drawAxes(statistics){
         let group = svg.append('g').classed('overview-axes',true);
         axes.x = d3.axisBottom(scales.x).ticks(5);
         let defaultTickFormat = axes.x.tickFormat();
@@ -83,9 +83,13 @@ let ChemicalOverviewChart = function(options){
                 .call(axes[`${c}-horizontal`]);
 
             //chemical label
-            svg.append('text').classed('axis-label',true).classed(c,true).classed('overview-axis',true)
+            let label = svg.append('text').classed('axis-label',true).classed(c,true).classed('overview-axis',true)
                 .attr('text-anchor','middle').attr('transform',`translate(${(paddingLeft-padding)},${top+graphSize/2}) rotate(-90)`)
-                .text(c);
+                .text(`${c} (ppm)`);
+            let content = `<b>Overall Minimum:</b> ${statistics[c].min} ppm at <i>${statistics[c].minTimeStamp}</i>`;
+            content += `<br><b>Overall Maximum:</b> ${statistics[c].max} ppm at <i>${statistics[c].maxTimeStamp}</i>`;
+            content += `<br>Note that these values don't consider any erroneous values.`;
+            tooltip.setEvents(label, content);
             top += graphSize + graphPadding;
         }
         console.log(axes);
