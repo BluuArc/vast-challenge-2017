@@ -344,3 +344,8 @@ text.legend-label {
     fill: gray;
     opacity: 0.5;
 }
+
+div#wind-indicator.error {
+    color: red;
+    font-weight: bold;
+}

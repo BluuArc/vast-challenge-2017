@@ -123,7 +123,7 @@ let StreamlineGraph = function (options) {
 
         svg.append('text').classed('axis-label', true)
             .attr('text-anchor', 'middle').attr('transform', `translate(${padding*0.25},${h/2}) rotate(-90)`)
-            .text('Relative Map Coordinates in Y Direection (Miles)');
+            .text('Relative Map Coordinates in Y Direction (Miles)');
 
 
         svg.append('text').classed('graph-title',true)
@@ -349,7 +349,7 @@ let StreamlineGraph = function (options) {
         //update wind simulation data first
         if(!data.wind || data.wind.length === 0){
             if(isSimulating && render){
-                d3.select('#wind-indicator').text("No wind data found for current time stamp");
+                // d3.select('#wind-indicator').text("No wind data found at nor near for current time stamp");
                 // for (let arrow of windGlyphs) {
                 //     arrow.glyph.classed('hide',true);
                 // }

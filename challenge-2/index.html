@@ -38,6 +38,65 @@
         </div>
         <!--Controls and Info-->
         <div class="row">
+            <!--Streamline Map Controls-->
+            <div class="col-md-5">
+                <p class="row" style="text-align:center;"><b>Streamline Graph Controls</b> <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="right"
+                        title="If the simulation is started, the streamlines from each factory are calculated at every time step based on the current configuration"></span></p>
+                <div class="row">
+                    <div class="col-md-2" style="text-align:center;">
+                        <b style="font-size:1vw;">Simulation Status:</b>
+                        <!--<span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="The left represents the chemical that is being focused on in the delta slider. The right represents the sensor whose data is being shown in the delta slider and chemical reading overview"></span>-->
+                    </div>
+                    <div class="col-md-10">
+                        <button onclick="toggleSimulation()" id="simToggle" style="margin: 0;" class="btn btn-block btn-lg btn-primary">Start the Simulation of Chemical Streamlines</button>
+                    </div>
+                </div>
+                <div class="row">
+                    <!--Interpolation Method-->
+                    <div class="col-md-2" style="text-align:center;">
+                        <b style="font-size:1vw;">Interpolation Method:</b>
+                    </div>
+                    <div class="col-md-10">
+                        <div id="interpolation-method" class="btn-group btn-group-justified" data-toggle="buttons">
+                            <label onclick="changeInterpolationMode(0)" class="btn btn-primary active">
+                                <input type="radio" name="interpolation-options" value="0" autocomplete="off" checked>Last
+                            </label>
+                            <label onclick="changeInterpolationMode(1)" class="btn btn-primary">
+                                <input type="radio" name="interpolation-options" value="1" autocomplete="off">Next
+                            </label>
+                            <label onclick="changeInterpolationMode(2)" class="btn btn-primary">
+                                <input type="radio" name="interpolation-options" value="2" autocomplete="off">Closest
+                            </label>
+                            <label onclick="changeInterpolationMode(3)" class="btn btn-primary">
+                                <input type="radio" name="interpolation-options" value="3" autocomplete="off">Interpolate
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-2" style="text-align:center">
+                        <b style="font-size:1vw;">Diffusion Rate:</b>
+                    </div>
+                    <div class="col-md-2">
+                        <input id="diffusion-rate" type="number" min="0" max="1" value="0.05" step="0.001" style="text-align:center;">
+                    </div>
+                    <div class="col-md-8">
+                        
+                    </div>
+
+                </div>
+            </div>
+            <!--Time Step Controls-->
+            <div class="col-md-2" style="text-align:center;">
+                <p class="row" class="control-label"><b>Current Time Stamp:</b></p>
+                <p id="current-time-stamp" class="row">slider</p>
+                <p class="row control-label"><b>Time Step Controls</b> <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" title="The number in the box defines the number of hours to jump when clicking the arrows"></span></p>
+                <div id="step-buttons" class="row">
+                    <button onclick="changeTime(-1)" class="btn btn-primary"><span class="glyphicon glyphicon-chevron-left"></button>
+                    <input id="time-step-size" type="number" min="0" max="48" value="1" style="max-width:10%; min-width: 10px; text-align:center;">
+                    <button onclick="changeTime(1)" class="btn btn-primary"><span class="glyphicon glyphicon-chevron-right"></span></button>
+                </div>
+            </div>
             <!--Time Range Info-->
             <div class="col-md-5">
                 <div class="row" style="text-align:center">
@@ -67,68 +126,15 @@
                     <div class="col-sm-8" id="wind-indicator" style="text-align:center;font-size:1vw;">---</div>
                 </div>
             </div>
-            <!--Time Step Controls-->
-            <div class="col-md-2" style="text-align:center;">
-                <p class="row" class="control-label"><b>Current Time Stamp:</b></p>
-                <p id="current-time-stamp" class="row">slider</p>
-                <p class="row control-label"><b>Time Step Controls</b> <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" title="The number in the box defines the number of hours to jump when clicking the arrows"></span></p>
-                <div id="step-buttons" class="row">
-                    <button onclick="changeTime(-1)" class="btn btn-primary"><span class="glyphicon glyphicon-chevron-left"></button>
-                    <input id="time-step-size" type="number" min="0" max="48" value="1" style="max-width:10%; min-width: 10px; text-align:center;">
-                    <button onclick="changeTime(1)" class="btn btn-primary"><span class="glyphicon glyphicon-chevron-right"></span></button>
-                </div>
-            </div>
-            <!--Streamline Map Controls-->
-            <div class="col-md-5">
-                <p class="row" style="text-align:center;"><b>Streamline Graph Controls</b> <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="right" title="If the simulation is started, the streamlines from each factory are calculated at every time step based on the current configuration"></span></p>
-                <button onclick="toggleSimulation()" id="simToggle" style="margin: 0;" class="row btn btn-block btn-lg btn-primary">Click to Start the Simulation of Chemical Streamlines</button>
-                <div class="row">
-                    <!--Interpolation Method-->
-                    <div class="col-md-2" style="text-align:center;">
-                        <p class="control-label" style="margin:0;">Interpolation Method:</p>
-                    </div>
-                    <div class="col-md-10">
-                        <div id="interpolation-method" class="btn-group-justified" data-toggle="buttons">
-                            <label onclick="changeInterpolationMode(0)" class="btn btn-primary active">
-                                <input type="radio" name="interpolation-options" value="0" autocomplete="off" checked>Last
-                            </label>
-                            <label onclick="changeInterpolationMode(1)" class="btn btn-primary">
-                                <input type="radio" name="interpolation-options" value="1" autocomplete="off">Next
-                            </label>
-                            <label onclick="changeInterpolationMode(2)" class="btn btn-primary">
-                                <input type="radio" name="interpolation-options" value="2" autocomplete="off">Closest
-                            </label>
-                            <label onclick="changeInterpolationMode(3)" class="btn btn-primary">
-                                <input type="radio" name="interpolation-options" value="3" autocomplete="off">Interpolate
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <div clas="row">
-                    <div class="col-md-2" style="text-align:center">
-                        <p class="control-label">Diffusion Rate (mph):</p>
-                    </div>
-                    <div class="col-md-2">
-                        <input id="diffusion-rate" type="number" min="0" max="1" value="0.05" step="0.001" style="text-align:center;">
-                    </div>
-                    <div class="col-md-8">
-                        <div class="row">
-                            <div class="col-sm-4" style="text-align:center">Using wind data from:</div>
-                            <!--<div class="col-sm-8" id="wind-indicator" style="text-align:center;">---</div>-->
-                        </div>
-                    </div>
-
-                </div>
-            </div>
         </div>
         <!--Visualizations-->
         <div class="row">
-            <div class="col-sm-6 main-column" id="overview" style="/*border: 1px solid gray;*/">
-                <div class="svg-container" id="overview-graph" style="border: 1px solid gray; background-color:white">
-                </div>
-            </div>
             <div class="col-sm-6 main-column" id="simulation-map">
                 <div class="svg-container" id="streamline-graph" style="border: 1px solid gray; background-color:white">
+                </div>
+            </div>
+            <div class="col-sm-6 main-column" id="overview" style="/*border: 1px solid gray;*/">
+                <div class="svg-container" id="overview-graph" style="border: 1px solid gray; background-color:white">
                 </div>
             </div>
         </div>
@@ -252,11 +258,11 @@
                     startSimulation();
                     toggle.classed('btn-primary',false);
                     toggle.classed('btn-warning',true);
-                    toggle.text("Click to Stop Simulating Chemical Streamlines");
+                    toggle.text("Stop Simulating Chemical Streamlines");
                 }else{
                     toggle.classed('btn-primary', true);
                     toggle.classed('btn-warning', false);
-                    toggle.text("Click to Start Simulating Chemical Streamlines");
+                    toggle.text("Start Simulating Chemical Streamlines");
                     stopSimulation();
                 }
             }catch(err){

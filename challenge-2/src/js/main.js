@@ -464,6 +464,11 @@ let Challenge2 = function(options){
     function updateWindIndicator(msg){
         let wind_indicator = d3.select('#wind-indicator');
         wind_indicator.text(msg);
+        if(msg.toLowerCase().indexOf("no wind data found") > -1){
+            wind_indicator.classed('error',true);
+        }else{
+            wind_indicator.classed('error',false);
+        }
     }
 
     function getWindDataAtTimeStamp(time){
