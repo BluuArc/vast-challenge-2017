@@ -624,7 +624,7 @@ let PixelSensor = function(parent,position,sensorNumber, options){
             let domain = scales[chemical].domain();
             let content = `<b class="${chemical}">${chemical}</b><br>`
             content += `<b>Reading:</b> ${value} ppm`;
-            content += `<br><b>Overall Min:</b> ${domain[0]}<br><b>Overall Max:</b> ${domain[1]}`;
+            // content += `<br><b>Overall Min:</b> ${domain[0]}<br><b>Overall Max:</b> ${domain[1]}`;
             tooltip.setContent(content);
             tooltip.showAt(d3.event.pageX,d3.event.pageY);
         }).on('mouseleave',function(){
