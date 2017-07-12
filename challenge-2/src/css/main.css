@@ -333,3 +333,14 @@ text.legend-label {
     fill: gray;
     opacity: 0.25;
 }
+
+.legend-mouseover {
+    fill: transparent;
+    stroke: none;
+    opacity: 1;
+}
+
+.legend-mouseover:hover {
+    fill: gray;
+    opacity: 0.5;
+}

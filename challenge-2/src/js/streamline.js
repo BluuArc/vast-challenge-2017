@@ -135,7 +135,7 @@ let StreamlineGraph = function (options) {
         drawSensors();
         drawWindGlyph();
 
-        legend = new StreamlineLegend(svg,new Vector(250,270),{
+        legend = new StreamlineLegend(svg,new Vector(250,245),{
             factoryConstructor: (parent) => {
                 let curFactory = parent.append('circle').classed('factory', true)
                     .attr('r', (glyphSize*0.25) / 2).attr('style', 'fill:lightgray; stroke-width:3px;');
@@ -152,6 +152,15 @@ let StreamlineGraph = function (options) {
                     // .attr('transform', defaultTransform)
                     .classed('wind-glyph', true)
                 return curGlpyh;
+            },
+            pixelSensorConstructor: (parent, location,size) => {
+                let curSensor = new PixelSensor(parent, location, "", {
+                    scales: scales,
+                    quadrantSize: size,
+                    sensorClickHandler: sensorClickHandler,
+                    chemicalClickHandler: chemicalClickHandler
+                });
+                return curSensor;
             }
         });
         legend.init();
@@ -719,9 +728,9 @@ let PixelSensor = function(parent,position,sensorNumber, options){
 let StreamlineLegend = function(parent,position,options){
     options = options || {};
     let self = this;
-
+    const chemical_names = ['Appluimonia', 'Chlorodinine', 'Methylosmolene', 'AGOC-3A'];
     let padding = 25;
-    let w = 125, h = 100;
+    let w = 125, h = 125;
 
     parent.append('g').classed('streamline-legend',true).attr('transform',`translate(${position.x},${position.y})`)
     .append('rect').attr('x',0).attr('y',0).attr('width',w).attr('height',h);
@@ -741,27 +750,71 @@ let StreamlineLegend = function(parent,position,options){
     }
 
     self.init = function(){
-        // drawPointAt(35,40);
+        // drawPointAt(35,60);
 
         let container = self.graph;
 
-        container.append('text').text("Streamline Map Legend")
+        container.append('text').text("Legend")
             .attr('x',w/2).attr('y',10).classed('legend-title',true);
 
         options.factoryConstructor(container).attr('cx',20).attr('cy',25);
         container.append('text').text('Factory Location').classed('legend-label',true)
             .attr('x',35).attr('y',25+3);
 
-        options.windGlyphConstructor(container).attr('transform',`translate(20,40)`).style('opacity',1.0);
+        options.windGlyphConstructor(container).attr('transform',`translate(20,45)`).style('opacity',1.0);
         let windGlyphDescription = container.append('text').text('Wind Direction').classed('legend-label',true)
-            .attr('x',35).attr('y',40+3);
+            .attr('x',35).attr('y',45+3);
         tooltip.setEvents(windGlyphDescription,"North is in the upward direction");
+
+        let pixelSensor = options.pixelSensorConstructor(container,{ x: 10, y: 55 }, 10);
+        pixelSensor.init();
+        pixelSensor.update({
+            'Appluimonia': [10],
+            'Chlorodinine': [15],
+            'Methylosmolene': [100],
+            'AGOC-3A': [45] 
+        });
+        let pixelSensorMouseOver = container.append('rect')
+            .attr('x',10).attr('y',55)
+            .attr('width',(10)*2).attr('height',(10)*2)
+            .classed('legend-mouseover',true);
+        tooltip.setEvents(pixelSensorMouseOver,'Each quadrant represents a chemical and the opacity of each quadrant represents a chemical reading.<br><br>A lighter color represents a lower reading and a more vivid color represents a higher reading.');
+        container.append('text').text("Sensor Location").classed('legend-label',true)
+            .attr('x',35).attr('y',65+3);
+
+        let chemicalGroup = container.append('g').attr('transform','translate(10,85)');
+        let bucketWidth = 1, bucketHeight = 5, numBuckets = 20;
+        let opacityScale = d3.scaleLinear().domain([0,numBuckets]).range([0.1,1.0]);
+        chemicalGroup.append('rect').attr('x',0).attr('y',0)
+            .attr('width',bucketWidth*(numBuckets-1)).attr('height',bucketHeight*chemical_names.length)
+            .attr('fill','white').attr('style','stroke: none');
+        for(let c of chemical_names){
+            let index = chemical_names.indexOf(c);
+            let n = 0;
+            let zero_reading = chemicalGroup.append('rect')
+                .attr('x', n * bucketWidth).attr('y', bucketHeight * index)
+                .attr('width', bucketWidth).attr('height', bucketHeight)
+                .classed('no-data', true)//.attr('style','stroke: none');
+            for(n = 1; n < numBuckets; ++n){
+                chemicalGroup.append('rect')
+                    .attr('x', n*bucketWidth).attr('y',bucketHeight*index)
+                    .attr('width',bucketWidth).attr('height',bucketHeight)
+                    .classed(c,true).attr('style',`opacity: ${opacityScale(n)};`);
+            }
+            let chemical_mouseover = chemicalGroup.append('rect')
+                .attr('x',0).attr('y',bucketHeight*index)
+                .attr('width',bucketWidth*numBuckets).attr('height',bucketHeight)
+                .classed('legend-mouseover',true);
+            tooltip.setEvents(chemical_mouseover, `Color range for <b class=${c}>${c}</b> for reading from min (leftmost non-gray color) to max (right).<br><br>The dark gray on the left is shown when there's a 0 or erroneous reading for <b class=${c}>${c}</b>.`);
+
+            // tooltip.setEvents(zero_reading,`This gray is the color shown when there's a 0 or erroneous reading for <b class=${c}>${c}</b>.`);
+        }
+        container.append('text').text("Chemical Reading").classed('legend-label',true)
+            .attr('x',35).attr('y',90+3)
+        container.append('text').text("Color Ranges").classed('legend-label', true)
+            .attr('x', 35).attr('y', 90+3).attr('dy','1em');
         
-        /*
-        append('circle').classed('factory',true)
-                .attr('r', offset / 2).classed(`${d.id}`,true)
-                .attr('cx', location.x).attr('cy', location.y).attr('style','fill:lightgray; stroke-width:3px;');
-            tooltip.setEvents(curFactory, `<b>${d.name}</b>`);
-        */
+
+        
     }
 }
