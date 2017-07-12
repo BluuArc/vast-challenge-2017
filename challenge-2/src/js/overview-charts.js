@@ -8,7 +8,7 @@ let ChemicalOverviewChart = function(options){
     let verbose = options.verbose || false;
     let w = 400, h = 400;
     let padding = 30;
-    let paddingLeft = 40, paddingRight = padding - paddingLeft;
+    let paddingLeft = 45, paddingRight = padding - paddingLeft;
     const chemical_names = ['Appluimonia', 'Chlorodinine', 'Methylosmolene', 'AGOC-3A'];
     let graphPadding = 10;
     let graphSize = (h-padding)/chemical_names.length - graphPadding;

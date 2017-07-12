@@ -118,12 +118,12 @@ let StreamlineGraph = function (options) {
             .call(axes.y);
 
         svg.append('text').classed('axis-label',true)
-            .attr('text-anchor','middle').attr('transform',`translate(${w/2},${h})`)
-            .text('Miles (West-East)');
+            .attr('text-anchor','middle').attr('transform',`translate(${w/2},${h*0.99})`)
+            .text('Relative Map Coordinates in X Direction (Miles)');
 
         svg.append('text').classed('axis-label', true)
             .attr('text-anchor', 'middle').attr('transform', `translate(${padding*0.25},${h/2}) rotate(-90)`)
-            .text('Miles (South-North)');
+            .text('Relative Map Coordinates in Y Direection (Miles)');
 
 
         svg.append('text').classed('graph-title',true)
