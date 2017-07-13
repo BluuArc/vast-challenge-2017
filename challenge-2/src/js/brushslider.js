@@ -324,14 +324,6 @@ let TimeSlider = function(options){
 
         if (sensor && sensor !== selectedSensor) {
             selectedSensor = sensor;
-            svg.selectAll('.delta-notification').classed('inactive', true);
-            svg.selectAll('.delta-line').classed('inactive', true);
-            svg.selectAll(`#${selectedSensor}`).classed('inactive', false).raise();
-            sensor_indicator.text(`Sensor ${selectedSensor.split('sensor')[1]}`);
-
-            d3.selectAll('g.pixel-sensor').selectAll('.sensor-label-overlay').classed('inactive',true);
-            d3.selectAll(`g#pixel-sensor-${selectedSensor.split('sensor')[1]}`)
-                .selectAll('.sensor-label-overlay').classed('inactive',false);
         }
 
         if(chemical && chemical !== selectedChemical){
@@ -429,6 +421,18 @@ let TimeSlider = function(options){
             console.log(paths);
             svg.selectAll(`#${selectedSensor}`).raise();
         }
+
+        svg.selectAll('.delta-line').classed('inactive', true).lower();
+        svg.select('.slider-background').lower();
+        svg.selectAll('.delta-notification').classed('inactive', true).lower();
+        svg.selectAll(`#${selectedSensor}`).classed('inactive', false).raise();
+        sensor_indicator.text(`Sensor ${selectedSensor.split('sensor')[1]}`);
+
+        svg.select('.delta-axes').raise();
+
+        d3.selectAll('g.pixel-sensor').selectAll('.sensor-label-overlay').classed('inactive', true);
+        d3.selectAll(`g#pixel-sensor-${selectedSensor.split('sensor')[1]}`)
+            .selectAll('.sensor-label-overlay').classed('inactive', false);
 
         // d3.select('#data-indicator').html(`Delta Slider | Chemical: <p class="${selectedChemical} data-indicator-text">${selectedChemical}</p> / Sensor: <p class=data-indicator-text>${selectedSensor}</p>`);
 

@@ -189,8 +189,8 @@ path, line {
 }
 
 .delta-line.inactive, .overview-path.inactive{
-    stroke: grey;
-    opacity: 0.1;
+    stroke: lightgray;
+    /*opacity: 0.1;*/
 }
 .delta-notification.inactive,.overview-notification.inactive {
     opacity: 0;
