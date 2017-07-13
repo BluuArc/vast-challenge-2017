@@ -366,3 +366,7 @@ text#streamline-notification.error{
 text#streamline-notification.warning{
     fill: #ec971f;
 }
+
+.overview-background {
+    fill: white;
+}

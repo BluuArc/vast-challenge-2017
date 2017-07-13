@@ -45,13 +45,13 @@ let ChemicalOverviewChart = function(options){
             .attr('text-anchor','middle').classed('graph-title',true)
             .attr('x',w/2).attr('y',padding);
 
-        drawAxes(options.statistics);
+        drawAxesAndBackgrounds(options.statistics);
 
         updateTimeScale("4/1/16 0:00", "4/2/16 0:00");
         console.log(scales);
     };
 
-    function drawAxes(statistics){
+    function drawAxesAndBackgrounds(statistics){
         let group = svg.append('g').classed('overview-axes',true);
         axes.x = d3.axisBottom(scales.x).ticks(5);
         let defaultTickFormat = axes.x.tickFormat();
@@ -90,6 +90,11 @@ let ChemicalOverviewChart = function(options){
             content += `<br><b>Overall Maximum:</b> ${statistics[c].max} ppm at <i>${statistics[c].maxTimeStamp}</i>`;
             content += `<br>Note that these values don't consider any erroneous values.`;
             tooltip.setEvents(label, content);
+
+            //background - used to hide erroneous tooltips of other sensors
+            group.append('rect').classed('overview-background',true)
+                .attr('x', paddingLeft - 0.5).attr('y',top)
+                .attr('width',h-padding*2).attr('height',graphSize);
             top += graphSize + graphPadding;
         }
         console.log(axes);
@@ -132,10 +137,7 @@ let ChemicalOverviewChart = function(options){
 
         if(sensor && sensor !== selectedSensor){
             selectedSensor = sensor;
-            console.log("updating sensor to",selectedSensor);
-            svg.selectAll('.overview-path').classed('inactive',true);
-            svg.selectAll('.overview-notification').classed('inactive',true);
-            svg.selectAll(`#${selectedSensor}`).classed('inactive',false).raise();
+            // console.log("updating sensor to",selectedSensor);
         }
 
         if(start && end){
@@ -258,8 +260,14 @@ let ChemicalOverviewChart = function(options){
                     }
                 }
             }
-            svg.selectAll(`#${selectedSensor}`).raise();
+            // svg.selectAll(`#${selectedSensor}`).raise();
         }
+
+        svg.selectAll('.overview-background').lower();
+        svg.selectAll('.overview-notification').classed('inactive', true).lower();
+        svg.selectAll('.overview-path').classed('inactive', true).raise();
+        svg.selectAll(`#${selectedSensor}`).classed('inactive', false).raise();
+        svg.selectAll('.graph-title').raise();
         
     }
 
