@@ -42,21 +42,21 @@
             <div class="col-md-6">
                 <p class="row" style="text-align:center;"><b>Streamline Map Controls</b></p>
                 <div class="row">
-                    <div class="col-md-4 ui-text">
+                    <div class="col-md-3 ui-text" style="padding-right:0;">
                         <b style="font-size:1vw;">Simulation Status:</b>
                         <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="If the simulation is started, the streamlines from each factory are calculated at every time step based on the current configuration"></span>
                     </div>
-                    <div class="col-md-8">
+                    <div class="col-md-9">
                         <button onclick="toggleSimulation()" id="simToggle" style="margin: 0;" class="btn btn-block btn-lg btn-primary">Start the Simulation of Chemical Streamlines</button>
                     </div>
                 </div>
-                <div class="row">
+                <div class="row" style="padding: 5px 0;">
                     <!--Interpolation Method-->
-                    <div class="col-md-4 ui-text">
+                    <div class="col-md-3 ui-text" style="padding-right:0;">
                         <b style="font-size:1vw;">Interpolation Method:</b>
                         <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="Choose how wind data points should be picked for the simulation. This is necessary as wind data is taken at least every three hours and chemical readings are taken every hour, meaning that some timestamps have no wind readings."></span>
                     </div>
-                    <div class="col-md-8">
+                    <div class="col-md-9">
                         <div id="interpolation-method" class="btn-group btn-group-justified" data-toggle="buttons">
                             <label onclick="changeInterpolationMode(0)" class="btn btn-primary active">
                                 <input type="radio" name="interpolation-options" value="0" autocomplete="off" checked>Last
@@ -77,16 +77,16 @@
                         </div>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-md-4 ui-text">
-                        <b style="font-size:1vw;">Legend Toggle:</b>
+                <div class="row" style="text-align:center">
+                    <div class="col-md-3 ui-text" style="padding-right:0;">
+                        <b style="font-size:1vw;">Simulation Range:</b>
+                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="The range in which you can move the blue time indicator when the simulation is running."></span>
                     </div>
-                    <div class="col-md-3">
-                        <button onclick="toggleLegend()" id="legendToggle" style="margin: 0;" class="btn btn-block btn-lg btn-primary">Hide Legend</button>
-                    </div>
-                    <div class="col-md-2 ui-text" style="padding: 0">
+                    <p class="col-md-2 ui-text" style="white-space:nowrap; overflow:visible; text-align: right; font-size:1vw;" id="sim-start">start</p>
+                    <p class="col-md-2 ui-text" style="white-space:nowrap; overflow:visible; font-size:1vw;" id="sim-end">end</p>
+                    <div class="col-md-2 ui-text" style="padding-right:0; padding-left: 0">
                         <b style="font-size:1vw;">Diffusion Rate:</b>
-                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="Defines the rate of change of the radius of the diffusion paths over time."></span>
+                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="Defines the rate of change (in miles per hour) of the radius of the diffusion paths over time."></span>
                     </div>
                     <div class="col-md-2 ui-text">
                         <!--style code based on https://stackoverflow.com/questions/773517/style-input-element-to-fill-remaining-width-of-its-container-->
@@ -96,14 +96,6 @@
                         <p style="font-size:1vw;">mph</p>
                     </div>
                 </div>
-                <div class="row" style="text-align:center">
-                    <div class="col-md-4 ui-text">
-                        <b style="font-size:1vw;">Simulation Range:</b>
-                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="The range in which you can move the blue time indicator when the simulation is running."></span>
-                    </div>
-                    <p class="col-md-4 ui-text" style="font-size:1vw;" id="sim-start">start</p>
-                    <p class="col-md-4 ui-text" style="font-size:1vw;" id="sim-end">end</p>
-                </div>
                 <!--</div>-->
             </div>
             <!--Time Range Info-->
@@ -111,50 +103,48 @@
                 <div class="row" style="text-align:center">
                     <b style="font-size:0.95vw">General Info</b>
                 </div>
-                <div class="row" style="text-align:center">
-                    <div class="col-md-4">
-                        <b style="font-size:1vw;">Wind Source:</b>
-                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="Tells which wind data point is being shown or which two points that the wind data is being interpolated"></span>
+                <div class="row ui-text">
+                    <div class="col-md-3">
+                        <b style="font-size:1vw;">Selection Range:</b>
+                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="The left and right show the start and end, respectively, of the delta slider and the axes on the chemical reading overview"></span>
                     </div>
-                    <div class="col-sm-8" id="wind-indicator" style="text-align:center;font-size:1vw;">---</div>
-                </div>
-                <div class="row" style="text-align:center">
-                    <div class="col-md-4">
-                        <b style="font-size:1vw;">Current Time Stamp:</b>
-                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="Tells from which timestamp is the data on the streamline map being shown"></span>
+                    <p class="col-md-2" style="margin-bottom: 0; white-space:nowrap; overflow:visible; font-size:1vw; padding-right: 0;" id="time-range-start">some date</p>
+                    <div class="col-sm-5" style="margin-bottom: 0; white-space:nowrap; overflow:visible; font-size:1vw;">
+                        <p style="margin-bottom: 0; white-space:nowrap; overflow:visible; font-size:1vw; text-align:center"> 
+                            <span class="glyphicon glyphicon-arrow-left"></span>
+                            <span id="current-time-stamp" style="font-size: 1vw;" >---</span>
+                            <span class="glyphicon glyphicon-arrow-right"></span>
+                        </p>
                     </div>
-                    <div class="col-sm-8" id="current-time-stamp" style="text-align:center;font-size:1vw;">---</div>
+                    <p class="col-md-2" style="margin-bottom: 0; white-space:nowrap; overflow:visible; font-size:1vw; padding-left: 0; text-align:right;" id="time-range-end">some other date</p>
                 </div>
-                <div class="row" style="text-align:center">
-                    <div class="col-md-4">
+                <div class="row ui-text">
+                    <div class="col-md-3">
                         <b style="font-size:1vw;">Time Step Controls:</b>
                         <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="The number in the box defines the number of hours to jump when clicking the arrows"></span>
                     </div>
                     <div class="col-md-2">
                         <button onclick="changeTime(-1)" class="btn btn-block btn-primary"><span class="glyphicon glyphicon-chevron-left"></button>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-5">
                         <input id="time-step-size" type="number" min="0" max="48" value="1" style="text-align:center; display:table-cell; width:100%;">
                     </div>
                     <div class="col-md-2">
                         <button onclick="changeTime(1)" class="btn btn-block btn-primary"><span class="glyphicon glyphicon-chevron-right"></span></button>
                     </div>
                 </div>
-                <div class="row" style="text-align:center">
-                    <div class="col-md-4">
+                <div class="row ui-text">
+                    <div class="col-md-3">
                         <b style="font-size:1vw;">Data Focus:</b>
                         <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="The left represents the chemical that is being focused on in the delta slider. The right represents the sensor whose data is being shown in the delta slider and chemical reading overview"></span>
                     </div>
-                    <b class="col-md-4" style="font-size:1vw;" id="focus-chemical">Chemical</b>
-                    <p class="col-md-4" style="font-size:1vw;" id="focus-sensor">Sensor 1</p>
-                </div>
-                <div class="row" style="text-align:center">
-                    <div class="col-md-4">
-                        <b style="font-size:1vw;">Selection Time Range:</b>
-                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="The left and right show the start and end, respectively, of the delta slider and the axes on the chemical reading overview"></span>
+                    <b class="col-md-2" style="font-size:1vw;" id="focus-chemical">Chemical</b>
+                    <p class="col-md-1" style="font-size:1vw; white-space:nowrap; overflow:visible;" id="focus-sensor">Sensor 1</p>
+                    <div class="col-md-2" style="padding-right:0; white-space:nowrap">
+                        <b style="font-size:1vw; padding-left: 15px;">Wind Source:</b>
+                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="Tells which wind data point is being shown or which two points that the wind data is being interpolated"></span>
                     </div>
-                    <p class="col-md-4" style="font-size:1vw;" id="time-range-start">some date</p>
-                    <p class="col-md-4" style="font-size:1vw;" id="time-range-end">some other date</p>
+                    <div class="col-sm-3" id="wind-indicator" style="text-align:center;font-size:1vw; margin-left:15px; white-space:nowrap; overflow:visible;">---</div>
                 </div>
             </div>
         </div>
@@ -162,6 +152,7 @@
         <div class="row">
             <div class="col-sm-6 main-column" id="simulation-map">
                 <div class="svg-container" id="streamline-graph" style="border: 1px solid gray; background-color:white">
+                    <button onclick="toggleLegend()" id="legendToggle" style="margin: 0;position: absolute; right: 10px; top: 10px;" class="btn btn-primary">Hide Legend</button>
                 </div>
             </div>
             <div class="col-sm-6 main-column" id="overview" style="/*border: 1px solid gray;*/">
@@ -278,7 +269,12 @@
             let endDate = d3.select('#time-range-end').text();
             start_index = timestamps.indexOf(startDate);
             end_index = timestamps.indexOf(endDate);
+            
             d3.select('#sim-end').text(endDate);
+
+            d3.select('#time-range-start').html(`<b style="font-size:1vw;">[</b>${startDate}`);
+            d3.select('#time-range-end').html(`${endDate}<b style="font-size:1vw;">]</b>`);
+
             challenge2.updateOverviewCharts(startDate,endDate);
         }
 
