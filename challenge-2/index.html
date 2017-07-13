@@ -40,7 +40,7 @@
         <div class="row">
             <!--Streamline Map Controls-->
             <div class="col-md-6">
-                <p class="row" style="text-align:center;"><b>Streamline Graph Controls</b></p>
+                <p class="row" style="text-align:center;"><b>Streamline Map Controls</b></p>
                 <div class="row">
                     <div class="col-md-4 ui-text">
                         <b style="font-size:1vw;">Simulation Status:</b>
@@ -60,15 +60,19 @@
                         <div id="interpolation-method" class="btn-group btn-group-justified" data-toggle="buttons">
                             <label onclick="changeInterpolationMode(0)" class="btn btn-primary active">
                                 <input type="radio" name="interpolation-options" value="0" autocomplete="off" checked>Last
+                                <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="Try to use previous wind reading if there's no data at the current time stamp; doesn't use wind data older than 6 hours."></span>
                             </label>
                             <label onclick="changeInterpolationMode(1)" class="btn btn-primary">
-                                <input type="radio" name="interpolation-options" value="1" autocomplete="off">Next
+                                <input type="radio" name="interpolation-options" value="1" autocomplete="off">Next 
+                                <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="Try to use next wind reading if there's no data at the current time stamp; doesn't use wind data newer than 6 hours."></span>
                             </label>
                             <label onclick="changeInterpolationMode(2)" class="btn btn-primary">
                                 <input type="radio" name="interpolation-options" value="2" autocomplete="off">Closest
+                                <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="Try to use closest wind reading (previous or next) if there's no data at the current time stamp; doesn't use wind data newer or older than 6 hours."></span>
                             </label>
                             <label onclick="changeInterpolationMode(3)" class="btn btn-primary">
                                 <input type="radio" name="interpolation-options" value="3" autocomplete="off">Interpolate
+                                <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="Interpolate the wind data between the next and previous wind readings if there's no data at the current time stamp; doesn't use wind data newer or older than 6 hours."></span>
                             </label>
                         </div>
                     </div>
