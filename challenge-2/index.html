@@ -39,24 +39,24 @@
         <!--Controls and Info-->
         <div class="row">
             <!--Streamline Map Controls-->
-            <div class="col-md-5">
-                <p class="row" style="text-align:center;"><b>Streamline Graph Controls</b> <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="right"
-                        title="If the simulation is started, the streamlines from each factory are calculated at every time step based on the current configuration"></span></p>
+            <div class="col-md-6">
+                <p class="row" style="text-align:center;"><b>Streamline Graph Controls</b></p>
                 <div class="row">
-                    <div class="col-md-2" style="text-align:center;">
+                    <div class="col-md-4 ui-text">
                         <b style="font-size:1vw;">Simulation Status:</b>
-                        <!--<span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="The left represents the chemical that is being focused on in the delta slider. The right represents the sensor whose data is being shown in the delta slider and chemical reading overview"></span>-->
+                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="If the simulation is started, the streamlines from each factory are calculated at every time step based on the current configuration"></span>
                     </div>
-                    <div class="col-md-10">
+                    <div class="col-md-8">
                         <button onclick="toggleSimulation()" id="simToggle" style="margin: 0;" class="btn btn-block btn-lg btn-primary">Start the Simulation of Chemical Streamlines</button>
                     </div>
                 </div>
                 <div class="row">
                     <!--Interpolation Method-->
-                    <div class="col-md-2" style="text-align:center;">
+                    <div class="col-md-4 ui-text">
                         <b style="font-size:1vw;">Interpolation Method:</b>
+                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="Choose how wind data points should be picked for the simulation. This is necessary as wind data is taken at least every three hours and chemical readings are taken every hour, meaning that some timestamps have no wind readings."></span>
                     </div>
-                    <div class="col-md-10">
+                    <div class="col-md-8">
                         <div id="interpolation-method" class="btn-group btn-group-justified" data-toggle="buttons">
                             <label onclick="changeInterpolationMode(0)" class="btn btn-primary active">
                                 <input type="radio" name="interpolation-options" value="0" autocomplete="off" checked>Last
@@ -74,40 +74,65 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-2" style="text-align:center">
+                    <div class="col-md-4 ui-text">
                         <b style="font-size:1vw;">Legend Toggle:</b>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <button onclick="toggleLegend()" id="legendToggle" style="margin: 0;" class="btn btn-block btn-lg btn-primary">Hide Legend</button>
                     </div>
-                    <div class="col-md-2" style="text-align:center">
+                    <div class="col-md-2 ui-text" style="padding: 0">
                         <b style="font-size:1vw;">Diffusion Rate:</b>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2 ui-text">
                         <!--style code based on https://stackoverflow.com/questions/773517/style-input-element-to-fill-remaining-width-of-its-container-->
                         <input id="diffusion-rate" type="number" min="0" max="1" value="0.05" step="0.001" style="text-align:center; display:table-cell; width:100%;">
                     </div>
-                    <div class="col-md-1" style="text-align:center">
+                    <div class="col-md-1 ui-text" style="text-align:left; padding:0;">
                         <p style="font-size:1vw;">mph</p>
                     </div>
-
                 </div>
-            </div>
-            <!--Time Step Controls-->
-            <div class="col-md-2" style="text-align:center;">
-                <p class="row" class="control-label"><b>Current Time Stamp:</b></p>
-                <p id="current-time-stamp" class="row">slider</p>
-                <p class="row control-label"><b>Time Step Controls</b> <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" title="The number in the box defines the number of hours to jump when clicking the arrows"></span></p>
-                <div id="step-buttons" class="row">
-                    <button onclick="changeTime(-1)" class="btn btn-primary"><span class="glyphicon glyphicon-chevron-left"></button>
-                    <input id="time-step-size" type="number" min="0" max="48" value="1" style="max-width:10%; min-width: 10px; text-align:center;">
-                    <button onclick="changeTime(1)" class="btn btn-primary"><span class="glyphicon glyphicon-chevron-right"></span></button>
+                <div class="row" style="text-align:center">
+                    <div class="col-md-4 ui-text">
+                        <b style="font-size:1vw;">Simulation Range:</b>
+                    </div>
+                    <p class="col-md-4 ui-text" style="font-size:1vw;" id="sim-start">start</p>
+                    <p class="col-md-4 ui-text" style="font-size:1vw;" id="sim-end">end</p>
                 </div>
+                <!--</div>-->
             </div>
             <!--Time Range Info-->
-            <div class="col-md-5">
+            <div class="col-md-6">
                 <div class="row" style="text-align:center">
                     <b style="font-size:0.95vw">General Info</b>
+                </div>
+                <div class="row" style="text-align:center">
+                    <div class="col-md-4">
+                        <b style="font-size:1vw;">Wind Source:</b>
+                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="Tells which wind data point is being shown or which two points that the wind data is being interpolated"></span>
+                    </div>
+                    <div class="col-sm-8" id="wind-indicator" style="text-align:center;font-size:1vw;">---</div>
+                </div>
+                <div class="row" style="text-align:center">
+                    <div class="col-md-4">
+                        <b style="font-size:1vw;">Current Time Stamp:</b>
+                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="Tells from which timestamp is the data on the streamline map being shown"></span>
+                    </div>
+                    <div class="col-sm-8" id="current-time-stamp" style="text-align:center;font-size:1vw;">---</div>
+                </div>
+                <div class="row" style="text-align:center">
+                    <div class="col-md-4">
+                        <b style="font-size:1vw;">Time Step Controls:</b>
+                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="The number in the box defines the number of hours to jump when clicking the arrows"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <button onclick="changeTime(-1)" class="btn btn-block btn-primary"><span class="glyphicon glyphicon-chevron-left"></button>
+                    </div>
+                    <div class="col-md-4">
+                        <input id="time-step-size" type="number" min="0" max="48" value="1" style="text-align:center; display:table-cell; width:100%;">
+                    </div>
+                    <div class="col-md-2">
+                        <button onclick="changeTime(1)" class="btn btn-block btn-primary"><span class="glyphicon glyphicon-chevron-right"></span></button>
+                    </div>
                 </div>
                 <div class="row" style="text-align:center">
                     <div class="col-md-4">
@@ -124,13 +149,6 @@
                     </div>
                     <p class="col-md-4" style="font-size:1vw;" id="time-range-start">some date</p>
                     <p class="col-md-4" style="font-size:1vw;" id="time-range-end">some other date</p>
-                </div>
-                <div class="row" style="text-align:center">
-                    <div class="col-md-4">
-                        <b style="font-size:1vw;">Wind Source:</b>
-                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="Tells which wind data point is being shown or which two points that the wind data is being interpolated"></span>
-                    </div>
-                    <div class="col-sm-8" id="wind-indicator" style="text-align:center;font-size:1vw;">---</div>
                 </div>
             </div>
         </div>

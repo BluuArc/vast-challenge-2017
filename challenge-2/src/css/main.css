@@ -6,6 +6,10 @@
     width: 100%;
 }
 
+.ui-text{
+    /*line-height: 300%;*/
+    text-align: center;
+}
 /* based off of http://thenewcode.com/744/Make-SVG-Responsive */
 .svg-container {
     /*display: inline-block;*/
