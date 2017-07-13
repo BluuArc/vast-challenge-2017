@@ -442,6 +442,26 @@ let TimeSlider = function(options){
         drawTimeStampSelector(time_stamp);
     }
 
+    self.drawSimStart = function(time_stamp){
+        svg.selectAll('.sim-indicator').remove();
 
+        if(time_stamp){
+            let stampScale;
+            //get month scale
+            let date = new Date(time_stamp);
+            for (let m in scales.monthScales) {
+                let monthRange = scales.monthScales[m].domain();
+                if (date < monthRange[1]) {
+                    stampScale = scales.monthScales[m];
+                    break;
+                }
+            }
+
+            let xPos = stampScale(date);
+            svg.append('path').classed('sim-indicator', true)
+                .datum([new Vector(xPos, padding*0.9), new Vector(xPos, (h - padding)*1.1)])
+                .attr('d', line);
+        }
+    }
     
 }

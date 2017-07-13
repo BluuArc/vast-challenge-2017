@@ -659,12 +659,16 @@ let Challenge2 = function(options){
         // getWindDataAtTimeStamp(time_stamp);
         if(verbose) console.log("Interpolation mode", windModes[index]);
         self.streamLineMap.setSimulationMode(true,getDataAtTimeStamp(time_stamp),time_stamp,diffusionRate);
+        self.overviewChart.drawSimStart(time_stamp);
+        self.timeSlider.drawSimStart(time_stamp);
     }
 
     self.stopSimulation = function(){
         isSimulating = false;
         // d3.select('#wind-indicator').text("---");
         self.streamLineMap.setSimulationMode(false);
+        self.overviewChart.drawSimStart();
+        self.timeSlider.drawSimStart();
     }
 
     self.changeInterpolationMode = function(value,time_stamp){

@@ -86,6 +86,7 @@
                     </div>
                     <div class="col-md-2 ui-text" style="padding: 0">
                         <b style="font-size:1vw;">Diffusion Rate:</b>
+                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="Defines the rate of change of the radius of the diffusion paths over time."></span>
                     </div>
                     <div class="col-md-2 ui-text">
                         <!--style code based on https://stackoverflow.com/questions/773517/style-input-element-to-fill-remaining-width-of-its-container-->
@@ -98,6 +99,7 @@
                 <div class="row" style="text-align:center">
                     <div class="col-md-4 ui-text">
                         <b style="font-size:1vw;">Simulation Range:</b>
+                        <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="The range in which you can move the blue time indicator when the simulation is running."></span>
                     </div>
                     <p class="col-md-4 ui-text" style="font-size:1vw;" id="sim-start">start</p>
                     <p class="col-md-4 ui-text" style="font-size:1vw;" id="sim-end">end</p>
@@ -140,7 +142,7 @@
                 </div>
                 <div class="row" style="text-align:center">
                     <div class="col-md-4">
-                        <b style="font-size:1vw;">Focus:</b>
+                        <b style="font-size:1vw;">Data Focus:</b>
                         <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="The left represents the chemical that is being focused on in the delta slider. The right represents the sensor whose data is being shown in the delta slider and chemical reading overview"></span>
                     </div>
                     <b class="col-md-4" style="font-size:1vw;" id="focus-chemical">Chemical</b>
@@ -148,7 +150,7 @@
                 </div>
                 <div class="row" style="text-align:center">
                     <div class="col-md-4">
-                        <b style="font-size:1vw;">Time Range:</b>
+                        <b style="font-size:1vw;">Selection Time Range:</b>
                         <span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="bottom" title="The left and right show the start and end, respectively, of the delta slider and the axes on the chemical reading overview"></span>
                     </div>
                     <p class="col-md-4" style="font-size:1vw;" id="time-range-start">some date</p>
@@ -173,7 +175,7 @@
     <script>
         let timestamps = [],timestamp_slider = d3.select('#timestamp-slider');;
         let old_val;
-        let start_index,end_index;
+        let start_index,end_index,sim_start_index;
         let options = {
             verbose: true,
             jumpToTimeStamp: jumpToTimeStamp,
@@ -214,6 +216,9 @@
                         challenge2.updateStreamLine(timestamps[timestamp_slider.node().value], 0,true);
                         challenge2.updateTimeSlider(timestamps[timestamp_slider.node().value]);
                         challenge2.updateOverviewTimeIndicator(timestamps[timestamp_slider.node().value]);
+                        if(!sim_start_index){
+                            d3.select('#sim-start').text(timestamps[timestamp_slider.node().value]);
+                        }
                     }catch(err){
                         console.log(err);
                         msg = err;
@@ -241,8 +246,9 @@
             let value = +(d3.select('#time-step-size').node().value) 
             let diff = value*amount;
             let curValue = +(timestamp_slider.node().value);
-            console.log("start:",start_index,"new val:",curValue+diff,"step size:",diff,"raw step value",value);
-            let dist_to_start = (start_index) ? (curValue - start_index) : 0;
+            let true_start = (sim_start_index !== undefined) ? sim_start_index : start_index; //choose time range based on if we're simulating
+            console.log("start:",true_start,"new val:",curValue+diff,"step size:",diff,"raw step value",value);
+            let dist_to_start = (true_start) ? (curValue - true_start) : 0;
             let dist_to_end = (end_index) ? (end_index - curValue) : (timestamps.length-1);
             //ensure positive step size
             if(value < 1 /*|| value > 48 || (curValue+diff) >= end_index*/ ){
@@ -250,7 +256,7 @@
                 d3.select('#time-step-size').node().value = 1;
                 return;
             }
-            if(start_index !== undefined && start_index > curValue+diff){//go up to the start index
+            if(true_start !== undefined && true_start > curValue+diff){//go up to the start index
                 diff = -(dist_to_start);
             }else if(end_index !==undefined && end_index < curValue+diff){//go up to the end index
                 diff = dist_to_end
@@ -272,6 +278,7 @@
             let endDate = d3.select('#time-range-end').text();
             start_index = timestamps.indexOf(startDate);
             end_index = timestamps.indexOf(endDate);
+            d3.select('#sim-end').text(endDate);
             challenge2.updateOverviewCharts(startDate,endDate);
         }
 
@@ -331,7 +338,7 @@
             sliderDiv.selectAll('*').classed('disabled',true);
             sliderDiv.select('foreignObject').selectAll('*').classed('disabled',false);
 
-            // start_index = +(timestamp_slider.node().value);
+            sim_start_index = +(timestamp_slider.node().value);
 
 
             let interpolation_dropdown = d3.select('#interpolation-method');
@@ -347,6 +354,8 @@
             let sliderDiv = d3.select('#timestamp-brush-slider');
             sliderDiv.classed('disabled',false);
             sliderDiv.selectAll('*').classed('disabled',false);
+
+            sim_start_index = undefined;
 
             d3.select('text#streamline-notification').style('display','none');
 

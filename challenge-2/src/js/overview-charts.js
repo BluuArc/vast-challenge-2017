@@ -113,6 +113,19 @@ let ChemicalOverviewChart = function(options){
             svg.select(`.time-axis#${c}`).call(axes[`${c}-horizontal`]);
         }
     }
+
+    self.drawSimStart = function(time_stamp){
+        svg.selectAll('.sim-indicator').remove();
+        
+        if(time_stamp){
+            let xPos = scales.x(new Date(time_stamp)) + (paddingLeft - padding);
+            let indicator = svg.append('path').classed('sim-indicator', true)
+                .datum([new Vector(xPos, graphPadding), new Vector(xPos, (h - padding) + 5)])
+                .attr('d', line);
+
+            tooltip.setEvents(indicator,`Simulation was started at ${time_stamp}. You cannot go before this point until the current simulation is stopped.`);
+        }
+    }
     
     self.update = function(start,end,sensor,data){
         console.log("entered overview chart update",start,end,data);
