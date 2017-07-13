@@ -179,23 +179,43 @@ let StreamlineGraph = function (options) {
         svg.select('#arrow').append('path')
             .attr('d', 'M2,2 L10,6 L2,10 L6,6 L2,2')
             .classed('wind-glyph', true);
+        
+
+        //add NSWE labels
+        let compassGroup = svg.append('g').style('opacity',0.5);
+        let multiplierDistance = 0.04, yMultiplier = 0.114, xMultiplier = 0.15;
+        let nonTextOffset = 0.012;
+        compassGroup.append('path')
+            .datum([new Vector(w*(xMultiplier-multiplierDistance),h*(yMultiplier-nonTextOffset)),new Vector(w*(xMultiplier+multiplierDistance),h*(yMultiplier-nonTextOffset))])
+            .attr('d',line);
+        compassGroup.append('path')
+            .datum([new Vector(w*xMultiplier, h*(yMultiplier - nonTextOffset+multiplierDistance)), new Vector(w*xMultiplier, h*(yMultiplier - nonTextOffset-multiplierDistance))])
+            .attr('d', line);
+        compassGroup.append('text').text('N').attr('text-anchor','middle')
+            .attr('x', w * xMultiplier).attr('y',h * (yMultiplier - multiplierDistance)).style('font-size','small');
+        compassGroup.append('text').text('S').attr('text-anchor', 'middle')
+            .attr('x', w * xMultiplier).attr('y', h * (yMultiplier + multiplierDistance)).style('font-size', 'small');
+        compassGroup.append('text').text('W').attr('text-anchor', 'middle')
+            .attr('x', w * (xMultiplier - multiplierDistance)).attr('y', h * yMultiplier).style('font-size', 'small');
+        compassGroup.append('text').text('E').attr('text-anchor', 'middle')
+            .attr('x', w * (xMultiplier + multiplierDistance)).attr('y', h * yMultiplier).style('font-size', 'small');
+
         let group = svg.append('g').classed('wind-glyph', true).attr('id', 'main')
             .attr('transform', `translate(${w * 0.15},${h * 0.1})`);
         windGlyph = {
             group: group,
-            mouseover: group.append('rect').classed('glyph-mouseover',true)
-                .attr('width',12).attr('height',12)
-                .attr('x',-12/2).attr('y',-12/2)
-                .attr('fill','transparent'),
+            mouseover: group.append('rect').classed('glyph-mouseover', true)
+                .attr('width', 12).attr('height', 12)
+                .attr('x', -12 / 2).attr('y', -12 / 2)
+                .attr('fill', 'transparent'),
             glyph: group.append('line')
-            .attr("x1", 0).attr("y1", 1)
-            .attr("x2", 0).attr("y2", 0)
-            .attr("marker-end", "url(#arrow)")
-            .attr('transform', `scale(2)`)
-            .classed('wind-glyph', true).attr('id','glyph'),
+                .attr("x1", 0).attr("y1", 1)
+                .attr("x2", 0).attr("y2", 0)
+                .attr("marker-end", "url(#arrow)")
+                .attr('transform', `scale(2)`)
+                .classed('wind-glyph', true).attr('id', 'glyph'),
             transformation: `translate(${w * 0.15},${h * 0.1})`,
-        }
-
+        };
         /*
         let group = svg.append('g');
 
@@ -287,7 +307,15 @@ let StreamlineGraph = function (options) {
                 drawDiffusionPath(f,[]);
             }
         }else{
-            self.update(data,1,true,time_stamp);
+            // timeStamps.push(time_stamp);
+            // self.update(data,1,true,time_stamp);
+            for (let f of factories) {
+                let path = calculateFactoryPath(f, windVectors);
+                console.log("Plotting for", f.name);
+                drawDiffusionPath(f, path.diffusion);
+                drawStreamlinePath(f, path.streamline);
+                drawStreamlinePoints(f, path.streamline,time_stamp);
+            }
         }
     };
 
@@ -360,7 +388,7 @@ let StreamlineGraph = function (options) {
             let windData = data.wind;
 
             let rotationAngle = windData[0].direction;
-            console.log("Updating wind");
+            console.log("Updating wind using data from timestamp",time_stamp);
             // for (let arrow of windGlyphs) {
             //     arrow.glyph.attr('transform', `${arrow.transformation} rotate(${rotationAngle+180})`).classed('hide',false);
             // }
@@ -371,13 +399,14 @@ let StreamlineGraph = function (options) {
                 if(difference > 0){
                     let svgVector = new Vector((windData[0].vector.x), (windData[0].vector.y));
                     windVectors.push(svgVector);
+                    console.log("Pushing timestamp",time_stamp);
                     timeStamps.push(time_stamp);
                 }else if (difference < 0){
                     windVectors.pop();
                     timeStamps.pop();
                 }
                 if(render){
-                    console.log("Calculating path for windVectors",windVectors);
+                    console.log("Calculating path for windVectors",windVectors,timeStamps);
                     for(let f of factories){
                         let path = calculateFactoryPath(f,windVectors);
                         console.log("Plotting for",f.name);
@@ -497,8 +526,8 @@ let StreamlineGraph = function (options) {
     function calculateFactoryPath(factory,vectors) {
         let streamline_points = []//, diffusion_points = [];
         let startLocation = new Vector(scales.PixelToMiles(factory.location[0]), scales.PixelToMiles(factory.location[1]));
-        let end = vectors.length - 1;
-        for (let v = 0; v <= end; ++v) {
+        let end = vectors.length;
+        for (let v = 0; v < end; ++v) {
             let curPoint = startLocation.multiply(1);
             //add vectors to get correct offset
             for (let p = v; p < end; ++p) {
@@ -506,6 +535,7 @@ let StreamlineGraph = function (options) {
             }
             streamline_points.push(curPoint);
         }
+        streamline_points.push(startLocation.multiply(1));
         streamline_points = streamline_points.map((p) => { return new Vector(scales.xMilesToSVG(p.x), scales.yMilesToSVG(p.y)); });
         diffusion_points = calculateDiffusionPath(streamline_points.reverse());
 
@@ -523,7 +553,7 @@ let StreamlineGraph = function (options) {
                 .attr('id', `${factory.id}-streamline`)
                 .attr('r', 3)
                 .attr('style', 'opacity:0.75;')
-            tooltip.setEvents(curPoint, `<b class=${factory.id}>${factory.name}</b><br>${timeStamps[points.length - p] || cur_time_stamp}`);
+            tooltip.setEvents(curPoint, `<b class=${factory.id}>${factory.name}</b><br>${timeStamps[points.length-p-1] || cur_time_stamp}`);
         }
     }
 
