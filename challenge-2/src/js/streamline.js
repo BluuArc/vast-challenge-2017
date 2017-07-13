@@ -130,7 +130,10 @@ let StreamlineGraph = function (options) {
             .attr('text-anchor','middle')
             .attr('x',w/2).attr('y',padding)
             .text("Streamline Map")
-
+        svg.append('text').attr('id','streamline-notification')
+            .attr('text-anchor','middle').style('display','none')
+            .attr('x',w/2).attr('y',padding*2)
+            .text("Simulation Error");
         drawFactories();
         drawSensors();
         drawWindGlyph();
@@ -375,25 +378,42 @@ let StreamlineGraph = function (options) {
         if(verbose)console.log("Entered streamline update with",arguments);
 
         //update wind simulation data first
+        let error_text = svg.select('text#streamline-notification');
         if(!data.wind || data.wind.length === 0){
             if(isSimulating && render){
-                // d3.select('#wind-indicator').text("No wind data found at nor near for current time stamp");
-                // for (let arrow of windGlyphs) {
-                //     arrow.glyph.classed('hide',true);
-                // }
-                // windGlyph.glyph.classed('error',true);
-                // tooltip.setEvents(windGlyph.glyph,`No wind data found for ${time_stamp}. No data will be added to simulation if simulation is running.`);
+                error_text.text("Simulation Error")
+                    .classed('warning',false).classed('error',true)
+                    .style('display',null);
+                tooltip.setEvents(error_text,`No data will be added to simulation for current time stamp (${time_stamp}) as there is no wind data.`);
+
+                console.log("Calculating path for windVectors", windVectors, timeStamps);
+                for (let f of factories) {
+                    let path = calculateFactoryPath(f, windVectors);
+                    console.log("Plotting for", f.name);
+                    drawDiffusionPath(f, path.diffusion);
+                    drawStreamlinePath(f, path.streamline);
+                    drawStreamlinePoints(f, path.streamline, time_stamp);
+                }
+                console.log("Done rendering");
             }
         }else{
             let windData = data.wind;
-
+            
             let rotationAngle = windData[0].direction;
             console.log("Updating wind using data from timestamp",time_stamp);
             // for (let arrow of windGlyphs) {
             //     arrow.glyph.attr('transform', `${arrow.transformation} rotate(${rotationAngle+180})`).classed('hide',false);
             // }
             if (windData.length > 1) {
-                d3.select('#wind-indicator').text("Multiple wind readings found for ${time_stamp}. Using first reading.");
+                d3.select('#wind-indicator').text(`Multiple wind readings found for ${time_stamp}. Using first reading.`);
+                if(isSimulating && render){
+                    error_text.text("Simulation Warning")
+                        .classed('warning', true).classed('error', false)
+                        .style('display', null);
+                    tooltip.setEvents(error_text, `Multiple wind readings found for ${time_stamp}. Using first reading.`);
+                }
+            }else{
+                error_text.style('display','none');
             }
             if(isSimulating){
                 if(difference > 0){

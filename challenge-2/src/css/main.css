@@ -349,3 +349,16 @@ div#wind-indicator.error {
     color: red;
     font-weight: bold;
 }
+
+text#streamline-notification {
+    font-weight: bold;
+    stroke: none;
+}
+
+text#streamline-notification.error{
+    fill: red;
+}
+
+text#streamline-notification.warning{
+    fill: #ec971f;
+}

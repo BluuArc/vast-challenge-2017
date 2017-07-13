@@ -84,6 +84,7 @@
                         <b style="font-size:1vw;">Diffusion Rate:</b>
                     </div>
                     <div class="col-md-3">
+                        <!--style code based on https://stackoverflow.com/questions/773517/style-input-element-to-fill-remaining-width-of-its-container-->
                         <input id="diffusion-rate" type="number" min="0" max="1" value="0.05" step="0.001" style="text-align:center; display:table-cell; width:100%;">
                     </div>
                     <div class="col-md-1" style="text-align:center">
@@ -325,7 +326,7 @@
             sliderDiv.classed('disabled',false);
             sliderDiv.selectAll('*').classed('disabled',false);
 
-            // start_index = undefined;
+            d3.select('text#streamline-notification').style('display','none');
 
             let interpolation_dropdown = d3.select('#interpolation-method');
             interpolation_dropdown.classed('disabled', false).attr('disabled',null);
