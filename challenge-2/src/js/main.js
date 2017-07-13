@@ -408,7 +408,7 @@ let Challenge2 = function(options){
                 wind: self.data.wind._statistics
             }
         };
-        console.log("Started initialization of overview map");
+        if(verbose) console.log("Started initialization of overview map");
         self.overviewChart.init(options);
     }
 

@@ -25,7 +25,7 @@ let ChemicalOverviewChart = function(options){
 
     //based off of https://bl.ocks.org/mbostock/34f08d5e11952a80609169b7917d4172
     self.init = function(options){
-        console.log("received",options);
+        if(verbose) console.log("received",options);
         let svgRange = {
             x: d3.scaleLinear().range([padding, w-padding]),
             y: d3.scaleLinear().range([padding, h-padding])
@@ -48,7 +48,7 @@ let ChemicalOverviewChart = function(options){
         drawAxesAndBackgrounds(options.statistics);
 
         updateTimeScale("4/1/16 0:00", "4/2/16 0:00");
-        console.log(scales);
+        if(verbose) console.log(scales);
     };
 
     function drawAxesAndBackgrounds(statistics){
@@ -97,13 +97,13 @@ let ChemicalOverviewChart = function(options){
                 .attr('width',h-padding*2).attr('height',graphSize);
             top += graphSize + graphPadding;
         }
-        console.log(axes);
+        if(verbose) console.log(axes);
 
     }
 
     function updateTimeScale(start,end){
         if(!scales.x) return;
-        console.log("update time scale",start,end);
+        if(verbose) console.log("update time scale",start,end);
         let start_time = new Date(start);
         let end_time = new Date(end);
         scales.x.domain([start_time,end_time]);
@@ -133,7 +133,7 @@ let ChemicalOverviewChart = function(options){
     }
     
     self.update = function(start,end,sensor,data){
-        console.log("entered overview chart update",start,end,data);
+        if(verbose) console.log("entered overview chart update",start,end,data);
 
         if(sensor && sensor !== selectedSensor){
             selectedSensor = sensor;
@@ -152,7 +152,7 @@ let ChemicalOverviewChart = function(options){
                 return new Date(a) - new Date(b); 
             });
 
-            console.log("Filtered timestamps",timestamps);
+            if(verbose) console.log("Filtered timestamps",timestamps);
 
             //array of paths
             let paths = {
@@ -225,7 +225,7 @@ let ChemicalOverviewChart = function(options){
                 }
             }
 
-            console.log(paths);
+            if(verbose) console.log(paths);
 
             //plot chemical data
             svg.selectAll('.overview-path').remove();
@@ -235,7 +235,7 @@ let ChemicalOverviewChart = function(options){
                 for(let s in paths[c]){
                     for(let p of paths[c][s]){ //for every path
                         let points = p.map((d) => { return new Vector(d.scaledTime,d.scaledReading)});
-                        console.log("points for",s,points)
+                        if(verbose) console.log("points for",s,points)
                         svg.append('path').datum(points)
                             .classed('overview-path',true)
                             .attr('id',s).classed(c,true)
@@ -245,11 +245,11 @@ let ChemicalOverviewChart = function(options){
                 }
 
                 for(let s in erroneous[c]){
-                    console.log(c,s,erroneous[c][s]);
+                    if(verbose) console.log(c,s,erroneous[c][s]);
                     let [min,max] = scales[c].range();
                     let offset = padding / 2 + (chemical_names.indexOf(c)) * graphSize + (chemical_names.indexOf(c))*graphPadding;
                     [min,max] = [min+offset,max+offset]
-                    console.log(c, scales[c].domain(),scales[c].range());
+                    if(verbose) console.log(c, scales[c].domain(),scales[c].range());
                     for(let dataPoint of erroneous[c][s]){
                         let xPos = scales.x(new Date(dataPoint)) + (paddingLeft - padding)
                         let notification = svg.append('path').classed('overview-notification', true)
@@ -272,7 +272,7 @@ let ChemicalOverviewChart = function(options){
     }
 
     function updateTimeSelector(time_stamp){
-        console.log("updateTimeSelector",time_stamp);
+        if (verbose) console.log("updateTimeSelector",time_stamp);
         let xPos = scales.x(new Date(time_stamp)) + (paddingLeft-padding);
         svg.selectAll('.timestamp-indicator').remove();
         svg.append('path').classed('timestamp-indicator', true)

@@ -18,8 +18,9 @@ d3.selection.prototype.moveToBack = function () {
 };
 
 let StreamlineGraph = function (options) {
-    console.log("received options:", options);
     options = options || {};
+    let verbose = options.verbose || false;
+    if(verbose) console.log("received options:", options);
     let self = this;
     let w = 400, h = 400;
     let padding = 30;
@@ -32,7 +33,6 @@ let StreamlineGraph = function (options) {
     let isSimulating = false;
     let windVectors = [], timeStamps = [];
     let diffusion_rate = 0.005;
-    let verbose = options.verbose || false;
     let sensorClickHandler = options.sensorClickHandler || ((sensorName) => {
         console.log("clicked",sensorName);
     });
@@ -278,7 +278,8 @@ let StreamlineGraph = function (options) {
                 scales: scales,
                 quadrantSize: glyphSize/2,
                 sensorClickHandler: sensorClickHandler,
-                chemicalClickHandler: chemicalClickHandler
+                chemicalClickHandler: chemicalClickHandler,
+                verbose: verbose
             });
 
             sensors[i].object.init();
@@ -314,7 +315,7 @@ let StreamlineGraph = function (options) {
             // self.update(data,1,true,time_stamp);
             for (let f of factories) {
                 let path = calculateFactoryPath(f, windVectors);
-                console.log("Plotting for", f.name);
+                if(verbose) console.log("Plotting for", f.name);
                 drawDiffusionPath(f, path.diffusion);
                 drawStreamlinePath(f, path.streamline);
                 drawStreamlinePoints(f, path.streamline,time_stamp);
@@ -345,7 +346,7 @@ let StreamlineGraph = function (options) {
             // 1m/s= 2.236936mph
             return metersPerSec * 2.236936;
         }
-        console.log("entered updateWindGlyph",arguments);
+        if (verbose) console.log("entered updateWindGlyph",arguments);
         if(!wind || wind.length === 0){
             windGlyph.group.selectAll('*').classed('error', true);
             let msg = `No wind data found for ${time_stamp_msg}. `;
@@ -355,7 +356,7 @@ let StreamlineGraph = function (options) {
             tooltip.setEvents(windGlyph.group, msg);
         }else{
             let rotationAngle = wind[0].direction;
-            console.log("rotation",rotationAngle);
+            if (verbose) console.log("rotation",rotationAngle);
             let msg = "";
             windGlyph.group.attr('transform',`${windGlyph.transformation} rotate(${rotationAngle+180})`)
             windGlyph.group.selectAll('*').classed('error',false).classed('warning',false);
@@ -386,21 +387,21 @@ let StreamlineGraph = function (options) {
                     .style('display',null);
                 tooltip.setEvents(error_text,`No data will be added to simulation for current time stamp (${time_stamp}) as there is no wind data.`);
 
-                console.log("Calculating path for windVectors", windVectors, timeStamps);
+                if (verbose) console.log("Calculating path for windVectors", windVectors, timeStamps);
                 for (let f of factories) {
                     let path = calculateFactoryPath(f, windVectors);
-                    console.log("Plotting for", f.name);
+                    if (verbose) console.log("Plotting for", f.name);
                     drawDiffusionPath(f, path.diffusion);
                     drawStreamlinePath(f, path.streamline);
                     drawStreamlinePoints(f, path.streamline, time_stamp);
                 }
-                console.log("Done rendering");
+                console.log("Done rendering streamline for",time_stamp);
             }
         }else{
             let windData = data.wind;
             
             let rotationAngle = windData[0].direction;
-            console.log("Updating wind using data from timestamp",time_stamp);
+            if (verbose) console.log("Updating wind using data from timestamp",time_stamp);
             // for (let arrow of windGlyphs) {
             //     arrow.glyph.attr('transform', `${arrow.transformation} rotate(${rotationAngle+180})`).classed('hide',false);
             // }
@@ -419,22 +420,23 @@ let StreamlineGraph = function (options) {
                 if(difference > 0){
                     let svgVector = new Vector((windData[0].vector.x), (windData[0].vector.y));
                     windVectors.push(svgVector);
-                    console.log("Pushing timestamp",time_stamp);
+                    if (verbose) console.log("Pushing timestamp",time_stamp);
                     timeStamps.push(time_stamp);
                 }else if (difference < 0){
                     windVectors.pop();
                     timeStamps.pop();
                 }
                 if(render){
-                    console.log("Calculating path for windVectors",windVectors,timeStamps);
+                    if (verbose) console.log("Calculating path for windVectors",windVectors,timeStamps);
                     for(let f of factories){
                         let path = calculateFactoryPath(f,windVectors);
-                        console.log("Plotting for",f.name);
+                        if (verbose) console.log("Plotting for",f.name);
+                        console.log(path.streamline.length);
                         drawDiffusionPath(f,path.diffusion);
                         drawStreamlinePath(f,path.streamline);
                         drawStreamlinePoints(f,path.streamline,time_stamp);
                     }
-                    console.log("Done rendering");
+                    console.log("Done rendering streamline for",time_stamp);
                 }
             }
         }
@@ -453,24 +455,24 @@ let StreamlineGraph = function (options) {
     */
     function calculateDiffusionVector(a, b, c) {
         let vectorA, vectorB, unitBisect, doRotate = false;
-        console.log("Received", a, b, c);
+        if (verbose) console.log("Received", a, b, c);
         if (!b) {
             throw Error("Point B is required");
         } else if (!a && !c) {
             throw Error("Point A or C is required");
         } else {
             if (!a) { //at beginning of path
-                console.log("bc");
+                if(verbose) console.log("bc");
                 vectorB = c.subtract(b); //b -> c
                 vectorA = vectorB.multiply(1); //a -> b; extended endpoint
                 doRotate = true;
             } else if (!c) { //at end of path
-                console.log("ab");
+                if(verbose) console.log("ab");
                 vectorA = b.subtract(a); //a -> b
                 vectorB = vectorA.multiply(1); //b -> c; extended endpoint
                 doRotate = true;
             } else { //at middle of path
-                console.log("abc");
+                if(verbose) console.log("abc");
                 vectorA = b.subtract(a); //a -> b
                 vectorB = c.subtract(b); //b -> c
             }
@@ -519,7 +521,7 @@ let StreamlineGraph = function (options) {
 
         let end = diffusionVectors.length - 1;
         let multiplier = scales.MilesToSVG(diffusion_rate);
-        console.log("DiffusionRate",diffusion_rate,multiplier);
+        if (verbose) console.log("DiffusionRate",diffusion_rate,multiplier);
         //draw half of the path
         for (let f = 0; f < diffusionVectors.length; ++f) {
             path_points.push(points[f].add(diffusionVectors[f].multiply(multiplier * f)));
@@ -598,6 +600,7 @@ let StreamlineGraph = function (options) {
 let PixelSensor = function(parent,position,sensorNumber, options){
     options = options || {};
     let self = this;
+    let verbose = options.verbose || false;
 
     let quadrantSize = options.quadrantSize || 20;
     let center = {
@@ -753,7 +756,7 @@ let PixelSensor = function(parent,position,sensorNumber, options){
 
         //set error message
         if(error_messages.length > 0){
-            console.log("Setting error messages");
+            if(verbose) console.log("Setting error messages");
             tooltip.setEvents(notificationBubble,error_messages.join("<br>"));
             notificationBubble.classed('error',true);
         }else{

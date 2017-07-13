@@ -296,7 +296,7 @@ let TimeSlider = function(options){
     }
 
     function drawTimeStampSelector(time_stamp){
-        console.log("brushslider",time_stamp);
+        if (verbose) console.log("brushslider",time_stamp);
         let stampScale;
         //get month scale
         let date = new Date(time_stamp);
@@ -318,7 +318,7 @@ let TimeSlider = function(options){
     self.drawChemicalDelta = (chemical,sensor,data) => {
         // selectedChemical = chemical;
         // selectedSensor = sensor;
-        console.log("received",chemical,sensor,data);
+        if(verbose) console.log("received",chemical,sensor,data);
         let chemical_indicator = d3.select('#focus-chemical');
         let sensor_indicator = d3.select('#focus-sensor');
 
@@ -418,7 +418,7 @@ let TimeSlider = function(options){
                 }
             }
 
-            console.log(paths);
+            if (verbose) console.log(paths);
             svg.selectAll(`#${selectedSensor}`).raise();
         }
 

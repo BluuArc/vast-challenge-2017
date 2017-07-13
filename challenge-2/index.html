@@ -177,7 +177,7 @@
         let old_val;
         let start_index,end_index,sim_start_index;
         let options = {
-            verbose: true,
+            verbose: false,
             jumpToTimeStamp: jumpToTimeStamp,
             timestamps: timestamps
         };
@@ -247,7 +247,7 @@
             let diff = value*amount;
             let curValue = +(timestamp_slider.node().value);
             let true_start = (sim_start_index !== undefined) ? sim_start_index : start_index; //choose time range based on if we're simulating
-            console.log("start:",true_start,"new val:",curValue+diff,"step size:",diff,"raw step value",value);
+            if (options.verbose) console.log("start:",true_start,"new val:",curValue+diff,"step size:",diff,"raw step value",value);
             let dist_to_start = (true_start) ? (curValue - true_start) : 0;
             let dist_to_end = (end_index) ? (end_index - curValue) : (timestamps.length-1);
             //ensure positive step size
@@ -261,7 +261,7 @@
             }else if(end_index !==undefined && end_index < curValue+diff){//go up to the end index
                 diff = dist_to_end
             }
-            console.log(curValue,amount,value);
+            if (options.verbose) console.log(curValue,amount,value);
             timestamp_slider.node().value = curValue + diff;
             updateStreamLine(value);
         }
@@ -283,7 +283,7 @@
         }
 
         function changeInterpolationMode(value){
-            console.log("interpolation value", value)
+            if (options.verbose) console.log("interpolation value", value)
             challenge2.changeInterpolationMode(value, timestamps[timestamp_slider.node().value]);
         }
 
@@ -344,7 +344,7 @@
             let interpolation_dropdown = d3.select('#interpolation-method');
             interpolation_dropdown.classed('disabled', true).attr('disabled',true);
             d3.select('#diffusion-rate').classed('disabled',true).attr('disabled',true);
-            console.log("interpolation value",d3.select('input[name="interpolation-options"]:checked').node().value)
+            if (options.verbose) console.log("interpolation value",d3.select('input[name="interpolation-options"]:checked').node().value)
             challenge2.startSimulation(d3.select('input[name="interpolation-options"]:checked').node().value,timestamps[timestamp_slider.node().value],diffusionRate);
             updateStreamLine();
         }
