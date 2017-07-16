@@ -543,6 +543,8 @@ let Challenge2 = function(options){
                 }else if(next && next.data){
                     data = next.data;
                     result = next;
+                }else{
+                    updateWindIndicator(`No wind data found at nor near ${time}`);
                 }
 
             }
