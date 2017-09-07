@@ -129,7 +129,7 @@ let StreamlineGraph = function (options) {
         svg.append('text').classed('graph-title',true)
             .attr('text-anchor','middle')
             .attr('x',w/2).attr('y',padding)
-            .text("Streamline Map")
+            .text("Pathline Map")
         svg.append('text').attr('id','streamline-notification')
             .attr('text-anchor','middle').style('display','none')
             .attr('x',w/2).attr('y',padding*2)
