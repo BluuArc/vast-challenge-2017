@@ -42,7 +42,7 @@ let StreamlineGraph = function (options) {
 
     let line = d3.line()
         .x((d) => { return d.x; }).y((d) => {return d.y; })
-        .curve(d3.curveCatmullRom);
+        .curve(d3.curveLinear);
 
     let sensors = [
         { name: '1', location: [62, 21] },
