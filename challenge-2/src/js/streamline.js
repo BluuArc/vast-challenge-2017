@@ -382,7 +382,7 @@ let StreamlineGraph = function (options) {
         let error_text = svg.select('text#streamline-notification');
         if(!data.wind || data.wind.length === 0){
             if(isSimulating && render){
-                error_text.text("Simulation Error")
+                error_text.text("Wind Data Error")
                     .classed('warning',false).classed('error',true)
                     .style('display',null);
                 tooltip.setEvents(error_text,`No data will be added to simulation for current time stamp (${time_stamp}) as there is no wind data.`);
@@ -408,7 +408,7 @@ let StreamlineGraph = function (options) {
             if (windData.length > 1) {
                 d3.select('#wind-indicator').text(`Multiple wind readings found for ${time_stamp}. Using first reading.`);
                 if(isSimulating && render){
-                    error_text.text("Simulation Warning")
+                    error_text.text("Wind Data Error")
                         .classed('warning', true).classed('error', false)
                         .style('display', null);
                     tooltip.setEvents(error_text, `Multiple wind readings found for ${time_stamp}. Using first reading.`);
